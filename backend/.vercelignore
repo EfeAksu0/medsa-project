@@ -1,0 +1,9 @@
+node_modules
+.env
+dist
+uploads
+*.log
+.vercel
+checkUser.ts
+resetPassword.ts
+debug-account.js

@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  name         String?
+  avatarUrl    String?
+  stripeCustomerId String? // For managing subscriptions
+  passwordHash String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  lastActive   DateTime        @default(now())
+
+  
+  // Email verification tracking
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  
+  // Subscription tracking
+  stripeSubscriptionId String?
+  subscriptionStatus   String?  // active, canceled, past_due, trialing, etc.
+  subscriptionEndsAt   DateTime?
+  
+  // Relations
+  trades       Trade[]
+  accounts     Account[]
+  models       Model[]
+  journalEntries JournalEntry[]
+  journalFolders JournalFolder[]
+  tradeFolders   TradeFolder[]
+  aiSessions     AiSession[]
+  tier           SubscriptionTier @default(KNIGHT)
+  toDoItems      ToDoItem[]
+
+  @@map("users")
+}
+
+model Account {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name           String   // e.g., "Live Account", "Demo Account"
+  type           String   // e.g., "LIVE", "DEMO", "FUNDED"
+  currentBalance Decimal  @db.Decimal(12, 2)
+  goalBalance    Decimal? @db.Decimal(12, 2)
+  
+  trades         Trade[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@map("accounts")
+}
+
+model Model {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name      String   // Strategy name, e.g., "ICT SMC", "Breakout"
+  symbol    String?  // Preferred symbol if any
+  
+  trades    Trade[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@map("models")
+}
+
+model Session {
+  id     String  @id @default(uuid())
+  name   String  @unique // "Asia", "London", "New York"
+  
+  trades Trade[]
+
+  @@map("sessions")
+}
+
+model PsychologyTag {
+  id     String  @id @default(uuid())
+  name   String  @unique // e.g., "Fear", "FOMO", "Confident"
+  color  String  @default("#3b82f6") // Hex color
+  
+  trades TradePsychology[]
+
+  @@map("psychology_tags")
+}
+
+model MistakeTag {
+  id     String  @id @default(uuid())
+  name   String  @unique // e.g., "Over-leveraged", "No SL"
+  color  String  @default("#ef4444") // Hex color
+  
+  trades TradeMistake[]
+
+  @@map("mistake_tags")
+}
+
+model Trade {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  accountId   String?
+  account     Account?    @relation(fields: [accountId], references: [id])
+  
+  modelId     String?
+  model       Model?      @relation(fields: [modelId], references: [id])
+  
+  sessionId   String?
+  session     Session?    @relation(fields: [sessionId], references: [id])
+  
+  folderId    String?
+  folder      TradeFolder? @relation(fields: [folderId], references: [id])
+  
+  // Many-to-many relations
+  psychology  TradePsychology[]
+  mistakes    TradeMistake[]
+  
+  // Trade details
+  instrument  String      // e.g., "EURUSD", "BTCUSD"
+  entryPrice  Decimal?    @db.Decimal(20, 8)
+  exitPrice   Decimal?    @db.Decimal(20, 8)
+  stopLoss    Decimal?    @db.Decimal(20, 8)
+  takeProfit  Decimal?    @db.Decimal(20, 8)
+  quantity    Decimal?    @db.Decimal(20, 8) // Position size
+  direction   String      @default("LONG") // "LONG" or "SHORT"
+  risk        Decimal?    @db.Decimal(12, 2) // $ Risk amount
+  reward      Decimal?    @db.Decimal(10, 2) // $ Reward
+  pnl         Decimal?    @db.Decimal(12, 2) // Profit/Loss
+  rrRatio     Decimal?    @db.Decimal(5, 2)  // R:R
+ 
+  result      TradeResult @default(OPEN)
+  notes       String?
+  
+  tradeDate   String      // "2024-01-14", "Today", "Market Open"
+  exitDate    String?     // "2024-01-15", "Stop Hit"
+  strategy    String?     // Kept for backward compatibility
+  imageUrl    String?     // URL/Path to the attached chart screenshot
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  @@map("trades")
+}
+
+// Junction table for Trade <-> PsychologyTag (many-to-many)
+model TradePsychology {
+  id              String         @id @default(uuid())
+  tradeId         String
+  psychologyTagId String
+  
+  trade           Trade          @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  psychologyTag   PsychologyTag  @relation(fields: [psychologyTagId], references: [id])
+  
+  @@unique([tradeId, psychologyTagId])
+  @@map("trade_psychology")
+}
+
+// Junction table for Trade <-> MistakeTag (many-to-many)
+model TradeMistake {
+  id           String      @id @default(uuid())
+  tradeId      String
+  mistakeTagId String
+  
+  trade        Trade       @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  mistakeTag   MistakeTag  @relation(fields: [mistakeTagId], references: [id])
+  
+  @@unique([tradeId, mistakeTagId])
+  @@map("trade_mistakes")
+}
+
+
+enum TradeResult {
+  WIN
+  LOSS
+  BREAKEVEN
+  OPEN
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  folderId  String?
+  folder    JournalFolder? @relation(fields: [folderId], references: [id])
+
+  date      DateTime @default(now())
+  content   String
+  tags      String[]
+  mood      String?
+  rating    Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("journal_entries")
+}
+
+model JournalFolder {
+  id        String         @id @default(uuid())
+  name      String
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   JournalEntry[]
+  
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, name])
+  @@map("journal_folders")
+}
+
+model TradeFolder {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades    Trade[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@map("trade_folders")
+}
+
+model AiSession {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("ai_sessions")
+}
+
+model AiMessage {
+  id        String    @id @default(uuid())
+  sessionId String
+  session   AiSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String    // "user" or "assistant"
+  content   String    @db.Text
+  emotion   String?   // Detected emotion (Tilt, Fear, Greed, Confident, Neutral)
+  createdAt DateTime  @default(now())
+
+  @@map("ai_messages")
+}
+
+enum SubscriptionTier {
+  KNIGHT
+  MEDYSA_AI
+}
+
+model ToDoItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("todo_items")
+}
+
+model UploadedImage {
+  id        String   @id @default(uuid())
+  userId    String
+  // Relation to User is optional but good for tracking ownership/cleanup
+  // user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  // keeping it loose for now as per plan, just storing userId string is enough context
+  
+  data      Bytes
+  mimeType  String
+  filename  String?   // Original filename if we want to keep it
+  
+  createdAt DateTime @default(now())
+
+  @@map("uploaded_images")
+}
+
+model BugReport {
+  id          String   @id @default(uuid())
+  userId      String?  // Optional, can be anonymous or from registered user
+  description String   @db.Text
+  steps       String?  @db.Text // Steps to reproduce
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  createdAt   DateTime @default(now())
+  
+  @@map("bug_reports")
+}

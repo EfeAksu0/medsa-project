@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-01-28T00:47:44.460Z",
+  "errorName": "JsonWebTokenError",
+  "errorMessage": "jwt malformed",
+  "authHeader": "Bearer [object Object]",
+  "tokenReceived": "[object...",
+  "secretType": "string",
+  "secretLength": 28
+}
