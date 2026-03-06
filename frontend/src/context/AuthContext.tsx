@@ -9,7 +9,11 @@ interface User {
     email: string;
     name?: string;
     tier?: string;
-    avatarUrl?: string; // New avatar field
+    avatarUrl?: string;
+    subscriptionStatus?: string;
+    subscriptionEndsAt?: string;
+    emailVerified?: boolean;
+    emailVerifiedAt?: string;
 }
 
 interface AuthContextType {

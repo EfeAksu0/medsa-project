@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteTrade = exports.updateTrade = exports.getTradeById = exports.getTrades = exports.createTrade = void 0;
 const zod_1 = require("zod");
 const prisma_1 = require("../prisma");
+const discord_1 = require("../discord");
 const tradeSchema = zod_1.z.object({
     instrument: zod_1.z.string().min(1),
     entryPrice: zod_1.z.number().optional().nullable(),
@@ -61,6 +62,12 @@ const createTrade = async (req, res, next) => {
             },
         });
         console.log('Trade created:', trade);
+        // Notify Discord (Non-blocking)
+        prisma_1.prisma.user.findUnique({ where: { id: userId } }).then(user => {
+            if (user) {
+                (0, discord_1.notifyNewTrade)(trade, user.name || 'Anonymous Trader').catch(e => console.error('Discord Notification Error:', e));
+            }
+        });
         res.status(201).json(trade);
     }
     catch (error) {

@@ -85,7 +85,7 @@ export default function FailChartPage() {
                             </div>
                             <div>
                                 <div className="font-bold text-white">Compound Growth</div>
-                                <div className="text-sm text-gray-400">Small wins > Big gambles.</div>
+                                <div className="text-sm text-gray-400">Small wins {' > '} Big gambles.</div>
                             </div>
                         </div>
                     </div>

@@ -10,11 +10,17 @@ const fs_1 = __importDefault(require("fs"));
 // Ensure upload directories exist
 const uploadDir = path_1.default.join(__dirname, '../../uploads');
 const tradesDir = path_1.default.join(uploadDir, 'trades');
-if (!fs_1.default.existsSync(uploadDir)) {
-    fs_1.default.mkdirSync(uploadDir, { recursive: true });
+// Ensure upload directories exist (Only in non-production or if write access exists)
+try {
+    if (!fs_1.default.existsSync(uploadDir)) {
+        fs_1.default.mkdirSync(uploadDir, { recursive: true });
+    }
+    if (!fs_1.default.existsSync(tradesDir)) {
+        fs_1.default.mkdirSync(tradesDir, { recursive: true });
+    }
 }
-if (!fs_1.default.existsSync(tradesDir)) {
-    fs_1.default.mkdirSync(tradesDir, { recursive: true });
+catch (error) {
+    console.warn("Could not create upload directories (likely read-only environment like Vercel). Using memory storage.");
 }
 const storage = multer_1.default.memoryStorage();
 const fileFilter = (req, file, cb) => {

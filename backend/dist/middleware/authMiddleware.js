@@ -26,6 +26,7 @@ const authenticate = async (req, res, next) => {
         next();
     }
     catch (err) {
+        console.error('JWT Verification Error:', err);
         return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
 };

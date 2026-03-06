@@ -6,9 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const app_1 = __importDefault(require("./app"));
+const discord_1 = require("./discord");
 const PORT = process.env.PORT || 4000;
 const startServer = async () => {
     try {
+        // Initialize Discord Bot
+        await (0, discord_1.setupDiscordBot)();
         // Database connection will go here later
         app_1.default.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);

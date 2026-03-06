@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medysa Project Report</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            color: #000;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .meta {
+            text-align: center;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        h2 {
+            border-bottom: 1px solid #000;
+            font-size: 18px;
+            margin-top: 30px;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        code {
+            font-family: "Courier New", Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            font-size: 0.9em;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #000;
+            margin: 20px 0;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: sans-serif;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .print-btn:hover {
+            background: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+    <h1>Medysa: AI-Powered Trading Psychology & Analytics Platform</h1>
+    <h2 class="subtitle">Course Project Report</h2>
+
+    <div class="meta">
+        <strong>Student:</strong> Efe Aksu<br>
+        <strong>Date:</strong> February 6, 2026
+    </div>
+
+    <hr>
+
+    <h2>1. Abstract</h2>
+    <p>Medysa is a comprehensive, full-stack web application designed to address the primary cause of failure in
+        financial markets: psychological error and lack of data-driven decision making. Unlike traditional trading
+        journals that simply record data, Medysa integrates a "Human-in-the-Loop" AI coaching system that analyzes user
+        behavior in real-time. By leveraging Large Language Models (LLMs) and statistical analysis, the platform detects
+        "Tilt" (emotional instability), provides corrective coaching, and offers institutional-grade analytics. This
+        paper details the system architecture, core algorithms, and implementation of the Medysa platform.</p>
+
+    <h2>2. Problem Statement</h2>
+    <p>Retail traders face a failure rate of approximately 90-95%. Research indicates this is rarely due to a lack of
+        technical knowledge, but rather:</p>
+    <ol>
+        <li><strong>Emotional volatility:</strong> "Revenge trading" and "FOMO" (Fear Of Missing Out) lead to impulsive
+            decisions.</li>
+        <li><strong>Lack of Feedback Loops:</strong> Traders often repeat mistakes because they lack objective,
+            data-driven feedback on their performance.</li>
+        <li><strong>Data Fragmentation:</strong> Trading data is often scattered across various brokerages with poor
+            visualization tools.</li>
+    </ol>
+    <p>Medysa solves these issues by acting as an external compliance officer and psychologist, automating the feedback
+        loop that professional proprietary trading firms provide manually.</p>
+
+    <h2>3. System Architecture & Technology Stack</h2>
+    <p>The application is built using a modern decoupled architecture to ensure scalability, security, and real-time
+        performance.</p>
+
+    <h3>3.1 Frontend (Client-Side)</h3>
+    <ul>
+        <li><strong>Framework:</strong> Next.js 14 (React) using the App Router for server-side rendering and optimized
+            SEO.</li>
+        <li><strong>Language:</strong> TypeScript for type safety and robust development.</li>
+        <li><strong>Styling:</strong> TailwindCSS with a custom "Glassmorphism" design system, utilizing heavily
+            customized UI components (Lucide icons, Framer Motion for animations).</li>
+        <li><strong>State Management:</strong> React Context API and SWR for real-time data fetching.</li>
+    </ul>
+
+    <h3>3.2 Backend (Server-Side)</h3>
+    <ul>
+        <li><strong>Runtime:</strong> Node.js with Express.js.</li>
+        <li><strong>Language:</strong> TypeScript.</li>
+        <li><strong>Authentication:</strong> Dual-layer authentication using Supabase Auth (JWT) integrated with custom
+            middleware.</li>
+        <li><strong>AI Integration:</strong> Google Gemini Pro via REST API, utilizing a prompt-engineering architecture
+            to simulate different coaching personas.</li>
+    </ul>
+
+    <h3>3.3 Database & Storage</h3>
+    <ul>
+        <li><strong>Database:</strong> PostgreSQL (hosted on Supabase).</li>
+        <li><strong>ORM:</strong> Prisma, providing a type-safe interface for complex relational queries (Users ->
+            Trades -> Journals).</li>
+        <li><strong>Triggers:</strong> Custom PL/pgSQL triggers for automated user provisioning and data integrity.</li>
+    </ul>
+
+    <h2>4. Key Features & Implementation</h2>
+
+    <h3>4.1 The AI "Psychologist" Engine</h3>
+    <p>The core innovation of Medysa is the AI Coach (<code>AiCoach.tsx</code> / <code>aiService.ts</code>). It does not
+        simply chat; it performs a forensic analysis of the user's recent data.</p>
+    <ul>
+        <li><strong>Context Assembly:</strong> When a user queries the AI, the backend aggregates their last 15 trades,
+            recent journal entries, and overall win/loss stats into a <code>UserContext</code> object.</li>
+        <li><strong>Tilt Detection Algorithm:</strong> A heuristic algorithm scans for risk factors:
+            <ul>
+                <li><em>Loss Streaks:</em> Detects consecutive losses > 3.</li>
+                <li><em>Drawdown Severity:</em> Flags losses that exceed 2.5x the average loss.</li>
+                <li><em>Rapid Execution:</em> Identifies "over-trading" patterns.</li>
+            </ul>
+        </li>
+        <li><strong>Dynamic Personas:</strong> Based on the calculated "Tilt Score," the AI dynamically switches
+            personality:
+            <ul>
+                <li><strong>The Medic:</strong> Engages when risk is CRITICAL. Tone is soothing and protective.</li>
+                <li><strong>The Sniper:</strong> Engages when the user is WINNING. Tone is disciplined to prevent
+                    overconfidence.</li>
+                <li><strong>The Forensic:</strong> Default analytical mode for data review.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>4.2 Institutional Analytics Dashboard</h3>
+    <p>The dashboard (<code>dashboard/page.tsx</code>) provides real-time visualization of trading performance.</p>
+    <ul>
+        <li><strong>Metrics:</strong> Calculates Profit Factor, Win Rate, and Average Risk/Reward ratio in real-time.
+        </li>
+        <li><strong>Visualizations:</strong> Interactive charts built with Recharts to show PnL curves and daily
+            performance heatmaps.</li>
+        <li><strong>Journaling:</strong> A rich-text entry system allows traders to log potential setups
+            (<code>Draft</code>), active trades (<code>Open</code>), and completed reviews (<code>Closed</code>),
+            creating a searchable database of their own psychology.</li>
+    </ul>
+
+    <h3>4.3 Content Creation Engine ("Reel Generator")</h3>
+    <p>Recognizing the modern "Creator Economy," Medysa includes a unique marketing tool (<code>reel/page.tsx</code>).
+    </p>
+    <ul>
+        <li><strong>Function:</strong> It programmatically generates short-form video content (TikTok/Reels) using CSS
+            animations and DOM manipulation.</li>
+        <li><strong>Implementation:</strong> It utilizes a sequenced state machine to animate text, charts, and AI
+            reactions, allowing users (and the platform admin) to produce viral marketing content without video editing
+            software.</li>
+    </ul>
+
+    <h2>5. Security & Deployment</h2>
+    <ul>
+        <li><strong>Row-Level Security (RLS):</strong> While Prisma handles application logic, database-level security
+            ensures users can only access their own financial data.</li>
+        <li><strong>Environment Safety:</strong> Strict separation of production and development keys (Stripe, Gemini,
+            Supabase).</li>
+        <li><strong>CI/CD:</strong> Automated deployment pipelines via Vercel for the frontend.</li>
+    </ul>
+
+    <h2>6. Conclusion</h2>
+    <p>Medysa represents a significant step forward in retail trading tools. By treating "Trading Psychology" as a data
+        science problem rather than a vague concept, it provides tangible, actionable value to users. The project
+        successfully demonstrates the integration of Generative AI into a high-stakes decision-making environment,
+        moving beyond simple chatbots to create a context-aware performance coach.</p>
+
+</body>
+
+</html>

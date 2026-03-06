@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
+const prisma_1 = require("./prisma");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const tradeRoutes_1 = __importDefault(require("./routes/tradeRoutes"));
 const analyticsRoutes_1 = __importDefault(require("./routes/analyticsRoutes"));
@@ -18,6 +19,7 @@ const aiRoutes_1 = __importDefault(require("./routes/aiRoutes"));
 const todoRoutes_1 = __importDefault(require("./routes/todoRoutes"));
 const uploadRoutes_1 = __importDefault(require("./routes/uploadRoutes"));
 const bugRoutes_1 = __importDefault(require("./routes/bugRoutes"));
+const debugRoutes_1 = __importDefault(require("./routes/debugRoutes"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const paymentController_1 = require("./controllers/paymentController");
 const app = (0, express_1.default)();
@@ -27,9 +29,14 @@ app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => callback(null, true), // Reflect request origin to support credentials
+    origin: [
+        "http://localhost:3000",
+        "https://medysa-trading.vercel.app",
+        "https://medysa-trading.vercel.app/"
+    ],
     credentials: true,
 }));
+// app.options('*', cors()); // Potential crash source in serverless
 // Stripe Webhook (Must be before express.json to get raw body)
 app.post('/api/payments/webhook', express_1.default.raw({ type: 'application/json' }), paymentController_1.handleWebhook);
 app.use((0, morgan_1.default)('dev'));
@@ -50,6 +57,23 @@ app.use('/api/trash', trashRoutes_1.default);
 app.use('/api/ai', aiRoutes_1.default);
 app.use('/api/todos', todoRoutes_1.default);
 app.use('/api/bugs', bugRoutes_1.default);
+app.use('/api/debug', debugRoutes_1.default);
+app.get('/api/debug/db-test', async (req, res) => {
+    try {
+        await prisma_1.prisma.$queryRaw `SELECT 1`;
+        res.json({
+            success: true,
+            message: 'Database connection successful!'
+        });
+    }
+    catch (error) {
+        console.error('DB Test Error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Database connection failed'
+        });
+    }
+});
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

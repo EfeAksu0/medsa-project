@@ -3,13 +3,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleWebhook = exports.createCheckoutSession = void 0;
+exports.createPortalSession = exports.verifyPaymentSession = exports.handleWebhook = exports.createCheckoutSession = void 0;
 const prisma_1 = require("../prisma");
 const stripe_1 = __importDefault(require("stripe"));
-const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3002';
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+        throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    }
+    return new stripe_1.default(key.trim());
+};
+const getFrontendUrl = () => {
+    let url = (process.env.FRONTEND_URL || 'http://localhost:3000').trim();
+    // Remove trailing slash if present to avoid double slashes
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+    // Add protocol if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = `https://${url}`;
+    }
+    return url;
+};
 const createCheckoutSession = async (req, res) => {
     try {
+        const stripe = getStripe();
+        const FRONTEND_URL = getFrontendUrl();
         const { planId } = req.body;
         const userId = req.user?.userId;
         if (!userId)
@@ -60,8 +79,8 @@ const createCheckoutSession = async (req, res) => {
         res.json({ url: session.url });
     }
     catch (error) {
-        console.error('Stripe Error:', error);
-        res.status(500).json({ error: 'Payment initialization failed' });
+        console.error('Stripe Checkout Error:', error.message, error);
+        res.status(500).json({ error: `Payment initialization failed: ${error.message}` });
     }
 };
 exports.createCheckoutSession = createCheckoutSession;
@@ -73,25 +92,165 @@ const handleWebhook = async (req, res) => {
     }
     let event;
     try {
+        const stripe = getStripe();
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
     }
     catch (err) {
         return res.status(400).send(`Webhook Signature Verification Failed: ${err.message}`);
     }
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const userId = session.metadata?.userId;
-        const targetTier = session.metadata?.targetTier;
-        if (userId && targetTier) {
-            console.log(`✅ Payment Successful! Upgrading user ${userId} to ${targetTier}`);
-            await prisma_1.prisma.user.update({
-                where: { id: userId },
-                data: {
-                    tier: targetTier, // Cast to enum if needed
-                },
-            });
+    try {
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object;
+            const userId = session.metadata?.userId;
+            const targetTier = session.metadata?.targetTier;
+            const stripe = getStripe();
+            if (userId && targetTier) {
+                console.log(`✅ Payment Successful! Upgrading user ${userId} to ${targetTier}`);
+                // Get subscription details
+                const subscriptionId = session.subscription;
+                let subscriptionEndsAt = null;
+                if (subscriptionId) {
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    // TODO: current_period_end no longer exists in Stripe SDK
+                    // Will use billing_cycle_anchor + 1 month for now
+                    subscriptionEndsAt = null; // Temporary: need to calculate proper end date
+                }
+                await prisma_1.prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                        tier: targetTier,
+                        stripeCustomerId: session.customer,
+                        stripeSubscriptionId: subscriptionId,
+                        subscriptionStatus: 'active',
+                        subscriptionEndsAt: subscriptionEndsAt,
+                    },
+                });
+            }
         }
+        else if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object;
+            const customerId = subscription.customer;
+            const user = await prisma_1.prisma.user.findFirst({
+                where: { stripeCustomerId: customerId },
+            });
+            if (user) {
+                console.log(`🔄 Subscription updated for user: ${user.id}`);
+                await prisma_1.prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        subscriptionStatus: subscription.status,
+                        // TODO: current_period_end no longer exists in Stripe SDK
+                        subscriptionEndsAt: null,
+                    },
+                });
+            }
+        }
+        else if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object;
+            const customerId = subscription.customer;
+            const user = await prisma_1.prisma.user.findFirst({
+                where: { stripeCustomerId: customerId },
+            });
+            if (user) {
+                console.log(`❌ Subscription canceled for user: ${user.id}`);
+                await prisma_1.prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        subscriptionStatus: 'canceled',
+                        // TODO: current_period_end no longer exists in Stripe SDK
+                        subscriptionEndsAt: null,
+                    },
+                });
+            }
+        }
+    }
+    catch (error) {
+        console.error('Webhook processing error:', error);
+        return res.status(500).json({ error: 'Webhook processing failed' });
     }
     res.json({ received: true });
 };
 exports.handleWebhook = handleWebhook;
+const verifyPaymentSession = async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        const userId = req.user?.userId;
+        if (!sessionId || !userId) {
+            return res.status(400).json({ error: 'Missing session ID or user ID' });
+        }
+        const stripe = getStripe();
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (!session) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+        // Verify the session belongs to this user (security check)
+        if (session.metadata?.userId !== userId.toString()) {
+            return res.status(403).json({ error: 'Session does not belong to this user' });
+        }
+        if (session.payment_status === 'paid') {
+            const targetTier = session.metadata?.targetTier;
+            if (targetTier) {
+                console.log(`✅ [Manual Verify] Payment Confirmed! Upgrading user ${userId} to ${targetTier}`);
+                // Idempotent update
+                await prisma_1.prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                        tier: targetTier,
+                        stripeCustomerId: session.customer // Save customer ID for portal access
+                    }
+                });
+                return res.json({ success: true, tier: targetTier });
+            }
+        }
+        return res.json({ success: false, status: session.payment_status });
+    }
+    catch (error) {
+        console.error('Verify Session Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.verifyPaymentSession = verifyPaymentSession;
+const createPortalSession = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email; // Expecting email to be added to JWT or fetched
+        if (!userId)
+            return res.status(401).json({ error: 'Unauthorized' });
+        // Fetch fresh user data to get stripeCustomerId
+        const user = await prisma_1.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            return res.status(404).json({ error: 'User not found' });
+        const stripe = getStripe();
+        const FRONTEND_URL = getFrontendUrl();
+        let customerId = user.stripeCustomerId;
+        // Fallback: If no customer ID in DB, search Stripe by email (for legacy users)
+        if (!customerId) {
+            console.log(`Searching Stripe for customer: ${user.email}`);
+            const customers = await stripe.customers.list({
+                email: user.email,
+                limit: 1
+            });
+            if (customers.data.length > 0) {
+                customerId = customers.data[0].id;
+                // Save it for next time
+                await prisma_1.prisma.user.update({
+                    where: { id: userId },
+                    data: { stripeCustomerId: customerId }
+                });
+            }
+        }
+        if (!customerId) {
+            return res.status(400).json({ error: 'No active subscription found to manage.' });
+        }
+        const session = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: `${FRONTEND_URL}/settings`,
+        });
+        res.json({ url: session.url });
+    }
+    catch (error) {
+        console.error('Portal Session Error:', error);
+        res.status(500).json({ error: 'Failed to create portal session' });
+    }
+};
+exports.createPortalSession = createPortalSession;
