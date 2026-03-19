@@ -11,6 +11,7 @@ const envSchema = z.object({
     PORT: z.string().default('4000'),
     DATABASE_URL: z.string(), // Relaxed validation to avoid boot crashes on format issues
     JWT_SECRET: z.string().min(1),
+    SUPABASE_JWT_SECRET: z.string().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

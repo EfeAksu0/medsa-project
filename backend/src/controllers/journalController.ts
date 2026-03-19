@@ -25,6 +25,16 @@ export const createEntry = async (req: Request, res: Response) => {
         const userId = (req as AuthenticatedRequest).user!.userId;
         const data = createEntrySchema.parse(req.body);
 
+        // Security Check: Verify folder ownership if provided
+        if (data.folderId) {
+            const folder = await prisma.journalFolder.findFirst({
+                where: { id: data.folderId, userId }
+            });
+            if (!folder) {
+                return res.status(403).json({ error: 'Unauthorized: Folder does not belong to you' });
+            }
+        }
+
         const entry = await prisma.journalEntry.create({
             data: {
                 userId,
@@ -43,7 +53,7 @@ export const createEntry = async (req: Request, res: Response) => {
             return res.status(400).json({ errors: (error as any).errors });
         }
         console.error('Create journal entry error:', (error as any)?.message, (error as any)?.stack);
-        res.status(500).json({ message: 'Internal server error', detail: (error as any)?.message });
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 

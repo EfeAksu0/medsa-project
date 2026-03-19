@@ -32,9 +32,23 @@ export const createTrade = async (req: AuthRequest, res: Response, next: NextFun
     try {
         console.log('Creating trade with body:', req.body);
         const userId = req.user!.userId;
-        console.log('User ID:', userId);
         const data = tradeSchema.parse(req.body);
-        console.log('Parsed data:', data);
+
+        // Security Check: Verify ownership of linked entities
+        if (data.accountId) {
+            const acc = await prisma.account.findFirst({ where: { id: data.accountId, userId } });
+            if (!acc) return res.status(403).json({ error: 'Unauthorized: Account does not belong to you' });
+        }
+        if (data.modelId) {
+            const model = await prisma.model.findFirst({ where: { id: data.modelId, userId } });
+            if (!model) return res.status(403).json({ error: 'Unauthorized: Model does not belong to you' });
+        }
+        // Note: Session is currently a global model (Asia/London/NY), no ownership check needed.
+
+        if (data.folderId) {
+            const folder = await prisma.tradeFolder.findFirst({ where: { id: data.folderId, userId } });
+            if (!folder) return res.status(403).json({ error: 'Unauthorized: Folder does not belong to you' });
+        }
 
         const trade = await prisma.trade.create({
             data: {

@@ -29,11 +29,27 @@ app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use((0, cors_1.default)({
-    origin: [
-        "http://localhost:3000",
-        "https://medysa-trading.vercel.app",
-        "https://medysa-trading.vercel.app/"
-    ],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (server-to-server, Postman, etc.)
+        if (!origin)
+            return callback(null, true);
+        const allowed = [
+            'http://localhost:3000',
+            'https://medysa.com',
+            'https://www.medysa.com',
+            'http://medysa.com',
+        ];
+        // Allow all Vercel preview deployments for this project
+        const isVercelPreview = /^https:\/\/medysa(-[a-z0-9]+)*\.vercel\.app$/.test(origin) ||
+            /^https:\/\/medysa-trading(-[a-z0-9]+)*\.vercel\.app$/.test(origin);
+        if (allowed.includes(origin) || isVercelPreview) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`[CORS] Blocked origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 // app.options('*', cors()); // Potential crash source in serverless

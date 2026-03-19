@@ -43,36 +43,31 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
         // JWT validation failed (invalid signature, wrong secret, etc.) — try Supabase token below
     }
 
-    // --- ATTEMPT 2: Decode as Supabase JWT (decode payload without verifying signature) ---
+    // --- ATTEMPT 2: Verify as Supabase JWT ---
     try {
-        const parts = token.split('.');
-        if (parts.length !== 3) {
-            return res.status(401).json({ error: 'Unauthorized: Malformed token' });
+        const supabaseSecret = env.SUPABASE_JWT_SECRET;
+
+        if (!supabaseSecret) {
+            // If secret is missing, we can't verify signature. 
+            // This is a configuration gap.
+            console.warn('[Auth] SUPABASE_JWT_SECRET is missing. Cannot verify Supabase tokens.');
+            return res.status(401).json({ error: 'Unauthorized: Server configuration error (Missing Auth Secret)' });
         }
 
-        // Base64url decode the payload
-        const payloadRaw = Buffer.from(parts[1], 'base64url').toString('utf8');
-        const payload = JSON.parse(payloadRaw);
+        const payload = jwt.verify(token, supabaseSecret) as { sub: string, email?: string };
         const supabaseUserId = payload.sub;
         const supabaseEmail = payload.email;
 
         if (!supabaseUserId) {
-            return res.status(401).json({ error: 'Unauthorized: Unable to identify user' });
+            return res.status(401).json({ error: 'Unauthorized: Unable to identify user from Supabase token' });
         }
 
-        // Check token expiry from payload
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp && payload.exp < now) {
-            return res.status(401).json({ error: 'Unauthorized: Token expired' });
-        }
-
-        // LOOKUP STRATEGY 1: Try by Supabase UUID (for users created via sync-supabase-user)
+        // LOOKUP STRATEGY 1: Try by Supabase UUID
         let user = await prisma.user.findUnique({
             where: { id: supabaseUserId }
         });
 
-        // LOOKUP STRATEGY 2: Try by email (for users created via our backend /auth/register)
-        // Their DB id is different from the Supabase sub, but email must match
+        // LOOKUP STRATEGY 2: Try by email
         if (!user && supabaseEmail) {
             user = await prisma.user.findUnique({
                 where: { email: supabaseEmail.toLowerCase() }
@@ -81,14 +76,14 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
         if (!user) {
             console.error(`[Auth] Supabase user not found in DB. sub=${supabaseUserId}, email=${supabaseEmail}`);
-            return res.status(401).json({ error: 'Unauthorized: User not found. Please log out and log back in.' });
+            return res.status(401).json({ error: 'Unauthorized: User record missing. Please re-register.' });
         }
 
         req.user = { userId: user.id };
         return next();
 
     } catch (err) {
-        console.error('Auth error:', err);
-        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        console.error('[Auth] Supabase Token Verification Failed:', (err as Error).message);
+        return res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
     }
 };

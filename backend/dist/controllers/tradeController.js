@@ -95,6 +95,11 @@ const getTrades = async (req, res, next) => {
             orderBy: {
                 tradeDate: 'desc',
             },
+            include: {
+                account: { select: { id: true, name: true, type: true } },
+                model: { select: { id: true, name: true } },
+                session: { select: { id: true, name: true } },
+            },
         });
         res.json({ trades });
     }

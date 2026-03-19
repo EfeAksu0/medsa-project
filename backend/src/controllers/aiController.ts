@@ -78,8 +78,7 @@ export async function chat(req: AuthRequest, res: Response) {
     } catch (error: any) {
         console.error('[AI] Chat outer error:', error?.message, error?.stack);
         return res.status(500).json({
-            error: error?.message || 'Failed to process message',
-            detail: error?.stack?.split('\n')[0] || 'Unknown error'
+            error: 'Failed to process message'
         });
     }
 }

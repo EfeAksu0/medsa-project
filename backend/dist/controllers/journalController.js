@@ -8,9 +8,9 @@ const createEntrySchema = zod_1.z.object({
     content: zod_1.z.string().min(1, "Content is required"),
     tags: zod_1.z.array(zod_1.z.string()).optional(),
     mood: zod_1.z.string().optional(),
-    rating: zod_1.z.number().min(1).max(5).optional(),
+    rating: zod_1.z.number().min(0).max(5).optional().nullable(),
     date: zod_1.z.string().optional(),
-    folderId: zod_1.z.string().optional(),
+    folderId: zod_1.z.string().optional().nullable(),
 });
 const createEntry = async (req, res) => {
     try {
@@ -21,8 +21,8 @@ const createEntry = async (req, res) => {
                 userId,
                 content: data.content,
                 tags: data.tags || [],
-                mood: data.mood,
-                rating: data.rating,
+                mood: data.mood || null,
+                rating: (data.rating && data.rating > 0) ? data.rating : null, // 0 = no rating
                 date: data.date ? new Date(data.date) : new Date(),
                 folderId: data.folderId || null,
             },
@@ -33,8 +33,8 @@ const createEntry = async (req, res) => {
         if (error instanceof zod_1.z.ZodError) {
             return res.status(400).json({ errors: error.errors });
         }
-        console.error('Create journal entry error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error('Create journal entry error:', error?.message, error?.stack);
+        res.status(500).json({ message: 'Internal server error', detail: error?.message });
     }
 };
 exports.createEntry = createEntry;

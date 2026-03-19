@@ -21,7 +21,12 @@ async function chat(req, res) {
             where: { id: userId },
             select: { tier: true }
         });
-        if (!user || user.tier !== client_1.SubscriptionTier.MEDYSA_AI) {
+        if (!user) {
+            return res.status(403).json({
+                error: 'AI Coach access requires the Medysa AI plan. Please upgrade your subscription.'
+            });
+        }
+        if (user.tier === client_1.SubscriptionTier.KNIGHT) {
             return res.status(403).json({
                 error: 'AI Coach access requires the Medysa AI plan. Please upgrade your subscription.'
             });
@@ -33,49 +38,41 @@ async function chat(req, res) {
         // Get or create session
         let session;
         if (sessionId) {
-            session = await prisma.aiSession.findFirst({
-                where: { id: sessionId, userId },
-            });
+            session = await prisma.aiSession.findFirst({ where: { id: sessionId, userId } });
         }
         if (!session) {
-            session = await prisma.aiSession.create({
-                data: { userId },
-            });
+            session = await prisma.aiSession.create({ data: { userId } });
         }
         // Save user message
         await prisma.aiMessage.create({
-            data: {
-                sessionId: session.id,
-                role: 'user',
-                content: message,
-            },
+            data: { sessionId: session.id, role: 'user', content: message },
         });
-        // Get user context
-        const context = await (0, aiService_1.getUserContext)(userId);
+        // Get user context (wrapped to surface errors)
+        let context;
+        try {
+            context = await (0, aiService_1.getUserContext)(userId);
+        }
+        catch (ctxError) {
+            console.error('[AI] getUserContext failed:', ctxError?.message);
+            return res.status(500).json({ error: 'Failed to process message', detail: `Context error: ${ctxError?.message}` });
+        }
         // Generate AI response
         const { response, emotion } = await (0, aiService_1.generateCoachingResponse)(message, context);
         // Save AI response
         const aiMessage = await prisma.aiMessage.create({
-            data: {
-                sessionId: session.id,
-                role: 'assistant',
-                content: response,
-                emotion,
-            },
+            data: { sessionId: session.id, role: 'assistant', content: response, emotion },
         });
         return res.json({
             sessionId: session.id,
-            message: {
-                id: aiMessage.id,
-                content: response,
-                emotion,
-                createdAt: aiMessage.createdAt,
-            },
+            message: { id: aiMessage.id, content: response, emotion, createdAt: aiMessage.createdAt },
         });
     }
     catch (error) {
-        console.error('Chat error:', error);
-        return res.status(500).json({ error: 'Failed to process message' });
+        console.error('[AI] Chat outer error:', error?.message, error?.stack);
+        return res.status(500).json({
+            error: error?.message || 'Failed to process message',
+            detail: error?.stack?.split('\n')[0] || 'Unknown error'
+        });
     }
 }
 /**

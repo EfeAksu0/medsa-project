@@ -41,7 +41,7 @@ const register = async (req, res, next) => {
             },
         });
         const token = jsonwebtoken_1.default.sign({ userId: user.id }, validateEnv_1.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier } });
+        res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier, subscriptionStatus: user.subscriptionStatus } });
     }
     catch (error) {
         console.error("REGISTRATION ERROR:", error);
@@ -66,7 +66,7 @@ const login = async (req, res, next) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         const token = jsonwebtoken_1.default.sign({ userId: user.id }, validateEnv_1.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier } });
+        res.json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier, subscriptionStatus: user.subscriptionStatus } });
     }
     catch (error) {
         next(error);

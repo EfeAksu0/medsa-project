@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const prisma_1 = require("../prisma");
+const debugController_1 = require("../controllers/debugController");
 const router = (0, express_1.Router)();
+router.get('/env', debugController_1.checkEnv);
 router.get('/db-test', async (req, res) => {
     try {
         await prisma_1.prisma.$queryRaw `SELECT 1`;

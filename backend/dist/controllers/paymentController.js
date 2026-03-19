@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPortalSession = exports.verifyPaymentSession = exports.handleWebhook = exports.createCheckoutSession = void 0;
 const prisma_1 = require("../prisma");
 const stripe_1 = __importDefault(require("stripe"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const validateEnv_1 = require("../utils/validateEnv");
 const getStripe = () => {
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) {
@@ -174,33 +176,45 @@ exports.handleWebhook = handleWebhook;
 const verifyPaymentSession = async (req, res) => {
     try {
         const { sessionId } = req.body;
-        const userId = req.user?.userId;
-        if (!sessionId || !userId) {
-            return res.status(400).json({ error: 'Missing session ID or user ID' });
+        // User ID is no longer required via auth middleware since this can be an unauthenticated returning page
+        // const userId = (req as any).user?.userId;
+        if (!sessionId) {
+            return res.status(400).json({ error: 'Missing session ID' });
         }
         const stripe = getStripe();
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         if (!session) {
             return res.status(404).json({ error: 'Session not found' });
         }
-        // Verify the session belongs to this user (security check)
-        if (session.metadata?.userId !== userId.toString()) {
-            return res.status(403).json({ error: 'Session does not belong to this user' });
+        const sessionUserId = session.metadata?.userId;
+        if (!sessionUserId) {
+            return res.status(400).json({ error: 'Session has no linked user metadata' });
         }
         if (session.payment_status === 'paid') {
             const targetTier = session.metadata?.targetTier;
-            if (targetTier) {
-                console.log(`✅ [Manual Verify] Payment Confirmed! Upgrading user ${userId} to ${targetTier}`);
-                // Idempotent update
-                await prisma_1.prisma.user.update({
-                    where: { id: userId },
+            console.log(`✅ [Manual Verify] Payment Confirmed! Upgrading user ${sessionUserId} to ${targetTier}`);
+            // Get user immediately
+            let user = await prisma_1.prisma.user.findUnique({
+                where: { id: sessionUserId }
+            });
+            if (!user) {
+                return res.status(404).json({ error: 'User not found in DB' });
+            }
+            if (targetTier && user.tier !== targetTier) {
+                user = await prisma_1.prisma.user.update({
+                    where: { id: sessionUserId },
                     data: {
                         tier: targetTier,
-                        stripeCustomerId: session.customer // Save customer ID for portal access
+                        stripeCustomerId: session.customer
                     }
                 });
-                return res.json({ success: true, tier: targetTier });
             }
+            // Re-issue JWT securely so the user auto-logs in even if changing browsers/apps
+            const token = jsonwebtoken_1.default.sign({ userId: user.id }, validateEnv_1.env.JWT_SECRET, { expiresIn: '7d' });
+            // Strip sensitive password
+            const safeUser = { ...user };
+            delete safeUser.password;
+            return res.json({ success: true, tier: targetTier || safeUser.tier, token, user: safeUser });
         }
         return res.json({ success: false, status: session.payment_status });
     }
