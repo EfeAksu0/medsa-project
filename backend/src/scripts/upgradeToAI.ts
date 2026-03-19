@@ -20,7 +20,10 @@ async function upgradeUser() {
 
     const updated = await prisma.user.update({
         where: { id: user.id },
-        data: { tier: 'MEDYSA_AI' }
+        data: {
+            tier: 'MEDYSA_AI',
+            subscriptionStatus: 'active'
+        }
     });
 
     console.log(`✅ User upgraded to: ${updated.tier}`);

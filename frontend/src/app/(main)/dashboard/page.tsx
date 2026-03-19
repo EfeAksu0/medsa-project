@@ -50,13 +50,13 @@ export default function DashboardPage() {
     const { data: statsData, isLoading: isLoadingStats } = useSWR<DashboardStats>(
         isDemo ? null : '/analytics/stats',
         fetcher,
-        { refreshInterval: 5000 }
+        { refreshInterval: 30000 }
     );
 
     const { data: equityDataRes, isLoading: isLoadingEquity } = useSWR<EquityPoint[]>(
         isDemo ? null : '/analytics/equity-curve',
         fetcher,
-        { refreshInterval: 5000 }
+        { refreshInterval: 30000 }
     );
 
     // DEMO DATA FALLBACK
@@ -279,6 +279,9 @@ export default function DashboardPage() {
 }
 
 
+import { memo } from 'react';
+
+// Memoized StatCard to prevent unnecessary re-renders
 interface StatCardProps {
     label: string;
     value: string | number;
@@ -288,7 +291,7 @@ interface StatCardProps {
     tooltip?: string;
 }
 
-function StatCard({ label, value, subLabel, icon: Icon, color = 'amber', tooltip }: StatCardProps) {
+const StatCard = memo(function StatCard({ label, value, subLabel, icon: Icon, color = 'amber', tooltip }: StatCardProps) {
     const colorMap = {
         green: {
             bg: 'bg-green-500/10',
@@ -352,4 +355,4 @@ function StatCard({ label, value, subLabel, icon: Icon, color = 'amber', tooltip
             )}
         </div>
     );
-}
+});

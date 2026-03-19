@@ -109,7 +109,7 @@ export function Sidebar() {
                     src="/medusa-bg.png"
                     alt="Medysa Background"
                     fill
-                    className="object-cover opacity-60 animate-pulse-slow"
+                    className="object-cover opacity-60"
                 />
                 <div className="absolute bottom-20 left-4 right-4 z-20 block group">
                     <p className="text-xs text-center text-gray-300 italic font-serif leading-relaxed opacity-90 drop-shadow-md group-hover:opacity-0 transition-opacity duration-500">
