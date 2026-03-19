@@ -68,14 +68,15 @@ export function AiCoach() {
             setMessages((prev) => [...prev, response.message]);
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
-            const errorMessage = error.response?.data?.error || 'System Error: Unable to complete analysis. Please retry.';
+            const errData = error.response?.data;
+            const errorMessage = errData?.detail || errData?.error || error.message || 'System Error: Unable to complete analysis. Please retry.';
 
             setMessages((prev) => [
                 ...prev,
                 {
                     id: Date.now().toString(),
                     role: 'assistant',
-                    content: errorMessage,
+                    content: `⚠️ ${errorMessage}`,
                     createdAt: new Date().toISOString(),
                 },
             ]);

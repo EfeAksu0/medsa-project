@@ -12,7 +12,7 @@ router.post('/create-checkout-session', authenticate, createCheckoutSession);
 router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
 // POST /api/payments/verify-session
-router.post('/verify-session', authenticate, verifyPaymentSession);
+router.post('/verify-session', verifyPaymentSession);
 
 // POST /api/payments/create-portal-session
 router.post('/create-portal-session', authenticate, createPortalSession);

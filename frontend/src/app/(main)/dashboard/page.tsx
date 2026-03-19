@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import useSWR, { mutate } from 'swr';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { TrendingUp, TrendingDown, Target, Activity, Swords, Shield, ShieldAlert } from 'lucide-react';
+import {
+    TrendingUp, TrendingDown, Target, Activity, Swords, Shield, ShieldAlert,
+    ChevronRight, Zap, Trophy, BarChart2
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EquityCurveChart } from '@/components/dashboard/EquityCurveChart';
 import { CalendarWidget } from '@/components/dashboard/CalendarWidget';
@@ -79,9 +82,7 @@ export default function DashboardPage() {
     const stats = isDemo ? demoStats : statsData;
     const equityData = isDemo ? demoEquityData : (equityDataRes || []);
 
-    // Initial loading state (only for real data when data is missing)
     const isLoading = !isDemo && (isLoadingStats || isLoadingEquity) && !stats;
-
 
     useEffect(() => {
         const verifyPayment = async () => {
@@ -92,32 +93,24 @@ export default function DashboardPage() {
 
             if (paymentSuccess && sessionId) {
                 try {
-                    // 1. Verify payment with backend (Double Check)
-                    console.log('Verifying payment session:', sessionId);
-                    await api.post('/payments/verify-session', { sessionId });
-
-                    // 2. Set flag to force tour on next load
+                    const res = await api.post('/payments/verify-session', { sessionId });
+                    if (res.data?.token && res.data?.user) {
+                        localStorage.setItem('token', res.data.token);
+                        localStorage.setItem('user', JSON.stringify(res.data.user));
+                    }
                     sessionStorage.setItem('medysa_force_onboarding', 'true');
-
-                    // Clean up URL
                     const newUrl = window.location.pathname;
                     window.history.replaceState({}, '', newUrl);
-
-                    // Force reload to update context/subscription status
                     window.location.reload();
-
                 } catch (err) {
                     console.error('Payment Verification Failed', err);
                 }
             } else if (paymentSuccess) {
-                // Fallback (legacy/error case)
                 sessionStorage.setItem('medysa_force_onboarding', 'true');
                 window.history.replaceState({}, '', window.location.pathname);
                 window.location.reload();
             } else {
-                // Check if forced from previous session/reload OR first time visit
                 const forceTour = sessionStorage.getItem('medysa_force_onboarding');
-
                 if (forceTour) {
                     sessionStorage.removeItem('medysa_force_onboarding');
                     setTimeout(() => setShowTour(true), 1000);
@@ -126,16 +119,9 @@ export default function DashboardPage() {
                 }
             }
         };
-
         verifyPayment();
     }, []);
 
-    const handleTourClose = useCallback(() => {
-        setShowTour(false);
-        localStorage.setItem('medysa_onboarding_completed', 'true');
-    }, []);
-
-    // Listen for storage events (when trades are added in another tab/component)
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'tradesUpdated') {
@@ -143,122 +129,144 @@ export default function DashboardPage() {
                 mutate('/analytics/equity-curve');
             }
         };
-
         window.addEventListener('storage', handleStorageChange);
-
-        // Also listen for custom events in the same tab
         const handleTradesUpdate = () => {
             mutate('/analytics/stats');
             mutate('/analytics/equity-curve');
         };
         window.addEventListener('tradesUpdated', handleTradesUpdate);
-
         return () => {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('tradesUpdated', handleTradesUpdate);
         };
     }, []);
 
-    if (isLoading) return <div className="text-gray-400">Loading battle command...</div>;
+    const handleTourClose = useCallback(() => {
+        setShowTour(false);
+        localStorage.setItem('medysa_onboarding_completed', 'true');
+    }, []);
+
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                <p className="text-amber-500/60 text-sm font-serif tracking-widest uppercase">Loading Command...</p>
+            </div>
+        </div>
+    );
 
     const netPnL = stats?.netPnL ?? 0;
     const isPositive = netPnL >= 0;
     const wins = stats?.winCount ?? 0;
     const losses = stats?.lossCount ?? 0;
+    const winRate = stats?.winRate ?? 0;
+    const totalTrades = stats?.totalTrades ?? 0;
+    const profitFactor = stats?.profitFactor ?? 0;
 
     return (
         <div className="space-y-6">
             <OnboardingTour isOpen={showTour} onClose={handleTourClose} />
             <BugReportModal isOpen={showBugModal} onClose={() => setShowBugModal(false)} />
 
-            {/* Medieval Header */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600" style={{ fontFamily: 'serif' }}>
-                            ⚔️ Battle Command ⚔️
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                            Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
                         </h1>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-bold text-amber-500 uppercase tracking-widest">
-                            Beta v0.9
-                        </span>
                         {user?.tier === 'MEDYSA_AI' && (
-                            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-[10px] font-bold text-purple-400 uppercase tracking-widest shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse">
-                                PLAN: MEDYSA AI
+                            <span className="px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-[10px] font-bold text-purple-400 uppercase tracking-widest shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+                                ✦ Medysa AI
                             </span>
                         )}
                         {user?.tier === 'KNIGHT' && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-bold text-amber-500 uppercase tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-                                PLAN: KNIGHT
+                            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                                ⚔ Knight
                             </span>
                         )}
                     </div>
-                    <p className="text-gray-400 mt-1">Your trading battlefield awaits</p>
+                    <p className="text-gray-500 text-sm mt-1">Here's your trading performance at a glance</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowBugModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 rounded-lg text-sm text-red-400 transition-all font-serif tracking-wide group"
+                        className="flex items-center gap-2 px-3 py-2 bg-red-900/10 hover:bg-red-900/20 border border-red-500/20 rounded-lg text-xs text-red-400/70 hover:text-red-400 transition-all"
                     >
-                        <ShieldAlert size={16} className="group-hover:animate-pulse" />
+                        <ShieldAlert size={14} />
                         Report Bug
                     </button>
                     <button
                         onClick={() => setShowTour(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-all font-serif tracking-wide"
+                        className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-gray-400 hover:text-white transition-all"
                     >
-                        <Shield size={16} className="text-amber-500" />
+                        <Shield size={14} className="text-amber-500" />
                         Guide
                     </button>
                 </div>
             </div>
 
-            {/* Knights Battle Animation */}
-            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-amber-600/30 rounded-xl p-6 shadow-2xl">
-                <div className="flex items-center gap-2 mb-4">
-                    <Swords className="text-amber-500" size={24} />
-                    <h2 className="text-xl font-bold text-amber-400" style={{ fontFamily: 'serif' }}>
-                        Arena of Valor
-                    </h2>
-                </div>
-                <KnightsBattle wins={wins} losses={losses} />
-            </div>
-
-            {/* Battle Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 4 Stat Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                    label="War Chest"
-                    value={`$${netPnL}`}
+                    label="Net P&L"
+                    value={`${isPositive ? '+' : ''}$${Number(netPnL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    subLabel="All time"
                     icon={isPositive ? TrendingUp : TrendingDown}
-                    trend={isPositive ? 'positive' : 'negative'}
-                    tooltip="Your total net profit or loss from all trades. Positive = making money!"
+                    color={isPositive ? 'green' : 'red'}
+                    tooltip="Your total net profit or loss from all trades."
                 />
                 <StatCard
-                    label="Victory Rate"
-                    value={`${stats?.winRate || 0}%`}
-                    icon={Shield}
+                    label="Win Rate"
+                    value={`${Number(winRate).toFixed(1)}%`}
+                    subLabel={`${wins}W / ${losses}L`}
+                    icon={Trophy}
+                    color="amber"
                     tooltip="Percentage of winning trades out of all completed trades."
                 />
                 <StatCard
-                    label="Battle Power"
-                    value={stats?.profitFactor || 0}
-                    icon={Swords}
-                    tooltip="Ratio of total profits to total losses. Above 1.0 = profitable trading."
+                    label="Profit Factor"
+                    value={Number(profitFactor).toFixed(2)}
+                    subLabel={profitFactor >= 1.5 ? '🔥 Excellent' : profitFactor >= 1 ? '✅ Profitable' : '⚠️ Needs work'}
+                    icon={Zap}
+                    color="blue"
+                    tooltip="Ratio of gross profit to gross loss. Above 1.5 = excellent."
                 />
                 <StatCard
-                    label="Total Battles"
-                    value={stats?.totalTrades || 0}
-                    icon={Activity}
-                    tooltip="The total number of trades you have recorded."
+                    label="Total Trades"
+                    value={totalTrades}
+                    subLabel="Recorded"
+                    icon={BarChart2}
+                    color="purple"
+                    tooltip="Total number of trades you have logged."
                 />
             </div>
 
-            {/* AI Coach Quick Access and ToDoWidget */}
+            {/* Main Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Left column: Chart + Calendar */}
                 <div className="xl:col-span-2 space-y-6">
                     <EquityCurveChart data={equityData} />
+
+                    {/* Arena section — now smaller and cleaner */}
+                    <div className="bg-gray-900/60 border border-amber-600/20 rounded-2xl p-5 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                <Swords className="text-amber-500" size={16} />
+                            </div>
+                            <h2 className="text-sm font-bold text-amber-400 uppercase tracking-widest" style={{ fontFamily: 'serif' }}>
+                                Arena of Valor
+                            </h2>
+                            <span className="ml-auto text-xs text-gray-600">{wins}W · {losses}L</span>
+                        </div>
+                        <KnightsBattle wins={wins} losses={losses} />
+                    </div>
+
                     <CalendarWidget />
                 </div>
+
+                {/* Right column: AI Coach + ToDo */}
                 <div className="space-y-6">
                     <AiCoachWidget />
                     <div className="h-[450px]">
@@ -271,50 +279,77 @@ export default function DashboardPage() {
 }
 
 
-
 interface StatCardProps {
     label: string;
     value: string | number;
+    subLabel?: string;
     icon: React.ElementType;
-    trend?: 'positive' | 'negative';
+    color?: 'green' | 'red' | 'amber' | 'blue' | 'purple';
     tooltip?: string;
 }
 
-function StatCard({ label, value, icon: Icon, trend, tooltip }: StatCardProps) {
+function StatCard({ label, value, subLabel, icon: Icon, color = 'amber', tooltip }: StatCardProps) {
+    const colorMap = {
+        green: {
+            bg: 'bg-green-500/10',
+            border: 'border-green-500/20',
+            text: 'text-green-400',
+            iconBg: 'bg-green-500/10 border-green-500/20',
+        },
+        red: {
+            bg: 'bg-red-500/10',
+            border: 'border-red-500/20',
+            text: 'text-red-400',
+            iconBg: 'bg-red-500/10 border-red-500/20',
+        },
+        amber: {
+            bg: 'bg-amber-500/5',
+            border: 'border-amber-500/20',
+            text: 'text-amber-300',
+            iconBg: 'bg-amber-500/10 border-amber-500/20',
+        },
+        blue: {
+            bg: 'bg-blue-500/5',
+            border: 'border-blue-500/20',
+            text: 'text-blue-400',
+            iconBg: 'bg-blue-500/10 border-blue-500/20',
+        },
+        purple: {
+            bg: 'bg-purple-500/5',
+            border: 'border-purple-500/20',
+            text: 'text-purple-400',
+            iconBg: 'bg-purple-500/10 border-purple-500/20',
+        },
+    };
+
+    const c = colorMap[color];
+
     return (
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-amber-600/20 p-6 rounded-xl flex items-center justify-between hover:border-amber-500/40 transition-all shadow-lg">
-            <div>
-                <div className="flex items-center gap-2">
-                    <p className="text-sm text-amber-300/70 font-medium uppercase tracking-wider" style={{ fontFamily: 'serif' }}>{label}</p>
-                    {tooltip && (
-                        <div className="group relative">
-                            <span className="w-4 h-4 rounded-full bg-gray-700 text-amber-400 text-[10px] font-bold inline-flex items-center justify-center cursor-help hover:bg-gray-600 transition-colors">
-                                ?
-                            </span>
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 border border-amber-600/30 rounded-lg text-xs text-gray-300 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-xl pointer-events-none">
-                                {tooltip}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
-                            </div>
-                        </div>
-                    )}
+        <div className={cn(
+            "relative group rounded-2xl p-5 border backdrop-blur-sm transition-all duration-300",
+            "bg-gray-900/60 border-gray-800/60 hover:border-gray-700/80",
+            "hover:shadow-lg hover:-translate-y-0.5"
+        )}>
+            <div className="flex items-start justify-between mb-3">
+                <div className={cn("p-2 rounded-xl border", c.iconBg)}>
+                    <Icon size={18} className={c.text} />
                 </div>
-                <p className={cn(
-                    "text-2xl font-bold mt-1",
-                    trend === 'positive' && "text-green-400",
-                    trend === 'negative' && "text-red-400",
-                    !trend && "text-amber-100"
-                )}>
-                    {value}
-                </p>
+                {tooltip && (
+                    <div className="group/tip relative">
+                        <span className="w-4 h-4 rounded-full bg-gray-800 text-gray-500 text-[10px] font-bold inline-flex items-center justify-center cursor-help hover:text-gray-300 transition-colors">
+                            ?
+                        </span>
+                        <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-300 w-44 opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-xl pointer-events-none">
+                            {tooltip}
+                        </div>
+                    </div>
+                )}
             </div>
-            <div className={cn(
-                "p-3 rounded-lg border-2",
-                trend === 'positive' && "bg-green-500/10 text-green-400 border-green-500/30",
-                trend === 'negative' && "bg-red-500/10 text-red-500 border-red-500/30",
-                !trend && "bg-amber-500/10 text-amber-400 border-amber-500/30"
-            )}>
-                <Icon size={24} />
-            </div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">{label}</p>
+            <p className={cn("text-2xl font-bold tracking-tight", c.text)}>{value}</p>
+            {subLabel && (
+                <p className="text-xs text-gray-600 mt-1">{subLabel}</p>
+            )}
         </div>
     );
 }

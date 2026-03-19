@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Smile, Meh, Frown, AlertCircle, Tag, Star, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Save, Smile, Meh, Frown, AlertCircle, Tag, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -14,6 +14,12 @@ export default function NewNotePage() {
     const [mood, setMood] = useState('');
     const [rating, setRating] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
+    const [folderId, setFolderId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        setFolderId(params.get('folderId'));
+    }, []);
 
     const moods = [
         { name: 'Confident', icon: Smile, color: 'text-green-500', border: 'border-green-500/50', bg: 'bg-green-500/10' },
@@ -36,7 +42,8 @@ export default function NewNotePage() {
                 content,
                 tags: tagList,
                 mood,
-                rating
+                rating,
+                ...(folderId ? { folderId } : {}),
             });
 
             toast.success("Entry recorded in the archives.");

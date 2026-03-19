@@ -56,8 +56,9 @@ export function AiCoachWidget() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('AI check failed:', error);
-            const errorMessage = error.response?.data?.error || 'Connection severed. Neural link unstable.';
-            setResponse(errorMessage);
+            const errData = error.response?.data;
+            const errorMessage = errData?.detail || errData?.error || error.message || 'Connection severed. Neural link unstable.';
+            setResponse(`⚠️ ${errorMessage}`);
             setPersona('NEUTRAL');
         } finally {
             setLoading(false);

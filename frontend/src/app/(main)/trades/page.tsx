@@ -50,6 +50,7 @@ export default function TradesPage() {
   // Create Folder State
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [isFolderCreating, setIsFolderCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -106,16 +107,23 @@ export default function TradesPage() {
   };
 
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim()) {
+      toast.error("Please enter a folder name.");
+      return;
+    }
     try {
-      await api.post('/trades/folders', { name: newFolderName });
+      setIsFolderCreating(true);
+      await api.post('/trades/folders', { name: newFolderName.trim() });
       toast.success("Folder created.");
       setNewFolderName('');
       setIsCreatingFolder(false);
       mutateFolders();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating folder", error);
-      toast.error("Error creating folder.");
+      const msg = error?.response?.data?.message || error?.message || "Error creating folder.";
+      toast.error(msg);
+    } finally {
+      setIsFolderCreating(false);
     }
   };
 
@@ -182,37 +190,38 @@ export default function TradesPage() {
             <div className="flex items-center gap-2 mb-2">
               <button
                 onClick={() => setCurrentFolder(null)}
-                className="text-gray-400 hover:text-white transition-colors flex items-center gap-1 text-sm font-mono"
+                className="text-gray-500 hover:text-white transition-colors flex items-center gap-1 text-sm"
               >
-                <ArrowLeft size={14} /> Root
+                <ArrowLeft size={14} /> All Trades
               </button>
-              <span className="text-gray-600">/</span>
-              <span className="text-amber-500 font-mono font-bold">{currentFolder.name}</span>
+              <span className="text-gray-700">/</span>
+              <span className="text-amber-500 font-semibold text-sm">{currentFolder.name}</span>
             </div>
           ) : (
-            <h1 className="text-2xl font-bold text-white">Trade Journal</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Trade Journal</h1>
+              <p className="text-sm text-gray-500 mt-1">Manage and analyze your trading performance</p>
+            </div>
           )}
-          <p className="text-gray-400 text-sm">
-            {currentFolder
-              ? `Viewing trades in ${currentFolder.name}`
-              : "Manage and analyze your trading performance."}
-          </p>
+          {currentFolder && (
+            <p className="text-gray-500 text-sm">Viewing trades in <span className="text-white">{currentFolder.name}</span></p>
+          )}
         </div>
         <div className="flex gap-2">
           {!currentFolder && (
             <button
               onClick={() => setIsCreatingFolder(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-800 hover:border-amber-500/50 text-gray-300 hover:text-white font-medium rounded-lg transition-all"
+              className="flex items-center gap-2 px-3 py-2.5 bg-gray-900/80 border border-gray-800 hover:border-amber-500/40 text-gray-400 hover:text-white text-sm font-medium rounded-xl transition-all"
             >
-              <FolderPlus size={18} />
+              <FolderPlus size={16} />
               <span>New Folder</span>
             </button>
           )}
           <button
             onClick={handleAddTrade}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-amber-900/20"
           >
-            <Plus size={20} />
+            <Plus size={18} />
             <span>Add Trade</span>
           </button>
         </div>
@@ -236,19 +245,32 @@ export default function TradesPage() {
       {/* Create Folder Input */}
       {
         isCreatingFolder && (
-          <div className="flex items-center gap-2 p-4 bg-gray-900/50 border border-gray-800 rounded-xl animate-in fade-in slide-in-from-top-2">
-            <Folder size={20} className="text-amber-500" />
+          <div className="relative z-10 flex items-center gap-2 p-4 bg-gray-900 border border-amber-500/30 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
+            <Folder size={20} className="text-amber-500 shrink-0" />
             <input
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="Folder Name..."
-              className="bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 flex-1"
+              className="bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 flex-1 outline-none"
               autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+              onKeyDown={(e) => e.key === 'Enter' && !isFolderCreating && handleCreateFolder()}
             />
-            <button onClick={() => setIsCreatingFolder(false)} className="text-gray-500 hover:text-white">Cancel</button>
-            <button onClick={handleCreateFolder} className="text-amber-500 hover:text-amber-400 font-bold">Create</button>
+            <button
+              type="button"
+              onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); }}
+              className="text-gray-500 hover:text-white px-2 py-1 rounded transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateFolder}
+              disabled={isFolderCreating || !newFolderName.trim()}
+              className="text-amber-500 hover:text-amber-400 font-bold px-2 py-1 rounded transition-colors disabled:opacity-40"
+            >
+              {isFolderCreating ? 'Creating...' : 'Create'}
+            </button>
           </div>
         )
       }

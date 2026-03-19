@@ -41,8 +41,8 @@ export default function LandingPage() {
       <nav className={`fixed top-12 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-gray-900/80 backdrop-blur-md border-b border-amber-600/20 py-3' : 'bg-transparent py-6'}`}>
         <div className="container mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="relative w-8 h-8">
-              <Image src="/logo.png" alt="Medysa Logo" fill className="object-contain" />
+            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-amber-500/80 shadow-[0_0_10px_rgba(251,191,36,0.3)] shrink-0 bg-black/50">
+              <Image src="/logo.png" alt="Medysa Logo" fill className="object-cover scale-[1.15]" />
             </div>
             <span className="text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600" style={{ fontFamily: 'Cinzel, serif' }}>
               MEDYSA
@@ -460,8 +460,8 @@ export default function LandingPage() {
       <footer className="py-20 border-t border-white/5 bg-black/40">
         <div className="container mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="relative w-6 h-6 grayscale opacity-50">
-              <Image src="/logo.png" alt="Medysa Logo" fill className="object-contain" />
+            <div className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-600 grayscale opacity-50 shrink-0 bg-black/50">
+              <Image src="/logo.png" alt="Medysa Logo" fill className="object-cover scale-[1.15]" />
             </div>
             <span className="text-xl font-bold tracking-widest text-gray-500" style={{ fontFamily: 'Cinzel, serif' }}>
               MEDYSA

@@ -28,11 +28,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Optional: Handle token expiration globally
+        // Only clear token if backend explicitly says token is missing/invalid
+        // Do NOT clear on every 401 — that causes cascade auth failures
         if (error.response?.status === 401) {
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
-                // window.location.href = '/login'; // Use with caution to avoid loops
+            const errorMsg = error.response?.data?.error || '';
+            // Only wipe token if it's truly invalid (not just a permission/tier issue)
+            if (errorMsg.includes('Invalid token') || errorMsg.includes('Malformed token')) {
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('token');
+                }
             }
         }
         return Promise.reject(error);

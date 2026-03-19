@@ -10,8 +10,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            router.push('/');
+        const isReturningFromStripe = typeof window !== 'undefined' &&
+            window.location.search.includes('session_id=');
+
+        if (!isLoading) {
+            if (!user && !isReturningFromStripe) {
+                router.push('/');
+            } else if (user && !isReturningFromStripe) {
+                const status = user.subscriptionStatus;
+                if (status !== 'active' && status !== 'trialing') {
+                    router.push('/upgrade');
+                }
+            }
         }
     }, [user, isLoading, router]);
 

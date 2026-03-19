@@ -45,7 +45,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
         const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier } });
+        res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier, subscriptionStatus: user.subscriptionStatus } });
     } catch (error) {
         console.error("REGISTRATION ERROR:", error);
         next(error);
@@ -74,7 +74,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
         const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier } });
+        res.json({ token, user: { id: user.id, email: user.email, name: user.name, tier: user.tier, subscriptionStatus: user.subscriptionStatus } });
     } catch (error) {
         next(error);
     }

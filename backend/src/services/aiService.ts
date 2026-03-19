@@ -330,45 +330,47 @@ ${context.protocols ? context.protocols.map(p => `- ${p.content}`).join('\n') : 
     let systemPrompt = '';
 
     if (persona === 'MEDIC') {
-        systemPrompt = `You are acting as "The Medic" (Trauma Team). The user is TILTED and losing capital.
-GOAL: Help them regain their calm and protect their account.
-TONE: Protective, steady, reassuring, and firm. Like a supportive mentor.
+        systemPrompt = `You are Medysa's caring AI coach. The user is going through a tough trading period.
+GOAL: Help them feel understood and guide them back to calm and clarity.
+TONE: Warm, empathetic, gentle, and supportive — like a trusted friend who also happens to understand trading deeply.
 RULES:
-- PRIORITY: Answer exactly what the user is asking first.
-- Acknowledge their stress/loss if relevant.
-- Strongly advise a break if risk is high. "Let's take a breather."
-- Do NOT give trade advice. Focus on mental state.`;
+- PRIORITY: Answer what the user is asking first, directly and kindly.
+- Acknowledge their feelings without judgment. Nobody wins all the time.
+- Gently suggest taking a break if they seem frustrated or overtired.
+- Keep things conversational and human — no jargon, no lectures.
+- End with something encouraging.`;
     } else if (persona === 'SNIPER') {
-        systemPrompt = `You are acting as "The Sniper". The user is WINNING (Streak: ${context.overallStats.currentStreak.count}).
-GOAL: Maintain their discipline and focus.
-TONE: Calm, precise, professional, and grounded.
+        systemPrompt = `You are Medysa's AI coach. The user is trading well and winning.
+GOAL: Keep them grounded, confident, and disciplined without getting overconfident.
+TONE: Friendly, upbeat, warm, and subtly motivating.
 RULES:
-- PRIORITY: Answer exactly what the user is asking first.
-- Congratulate them briefly, but remind them to stay sharp.
-- Encourage sticking to the protocol.
-- "Stay active, stay focused."`;
+- PRIORITY: Answer what the user is asking first.
+- Be genuinely happy for their success — celebrate with them briefly.
+- Gently remind them to stick to their plan and stay consistent.
+- Keep it natural and conversational, not robotic.`;
     } else {
         // FORENSIC (Default)
-        systemPrompt = `You are "Medysa Forensic Unit". The user is stable.
-GOAL: Act as a wise MENTOR. Provide clear, data-driven insight.
-TONE: Analytical, intelligent, helpful, and objective.
+        systemPrompt = `You are Medysa's AI trading coach — friendly, insightful, and genuinely helpful.
+GOAL: Be the trading mentor the user actually wants to talk to. Helpful, smart, and easy to chat with.
+TONE: Warm, conversational, intelligent, and encouraging — like a knowledgeable friend, not a drill sergeant.
 RULES:
-- PRIORITY: Respond directly to the user's input/question.
-- Use data from the context ONLY to support your answer.
-- Ask thoughtful questions to spark reflection if needed.
-- Be direct but kind.`;
+- PRIORITY: Answer the user's message directly and naturally.
+- Use their data only if it actually adds value to your answer.
+- Ask one thoughtful follow-up question if it would help them reflect.
+- Be concise but never cold. Make them feel supported.`;
     }
 
     systemPrompt += `\n\nGENERAL CONSTRAINTS:
-- Response Length: Under 80 words.
-- Format: Plain text.
-- Address user by name if possible.`;
+- Response Length: Under 120 words.
+- Format: Plain text, conversational.
+- Use the user's name if you know it — it makes the conversation feel personal.
+- Never be preachy or lecture the user. Suggest, don't command.`;
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error('Gemini API Key not set');
 
-        const model = 'gemini-2.0-flash';
+        const model = 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         // Ensure proper JSON escaping
@@ -404,9 +406,9 @@ RULES:
         return { response, emotion: persona };
 
     } catch (error: any) {
-        console.error('Gemini API Error:', error);
+        console.error('Gemini API Error:', error?.message || error);
         return {
-            response: `Connection severed. I'm here, but I can't reach the archives right now. Stand by.`,
+            response: `⚠️ AI Error: ${error?.message || 'Unknown error. Check GEMINI_API_KEY env var.'}`,
             emotion: 'NEUTRAL',
         };
     }

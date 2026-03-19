@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { checkEnv } from '../controllers/debugController';
 
 const router = Router();
+
+router.get('/env', checkEnv);
 
 router.get('/db-test', async (req: Request, res: Response) => {
     try {

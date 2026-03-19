@@ -22,7 +22,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' 
                 onClick={onClose}
             />
             <div className={cn(
-                "relative bg-gray-900 border border-gray-800 rounded-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all animate-in fade-in zoom-in-95 duration-200",
+                "relative z-10 bg-gray-900 border border-gray-800 rounded-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto transform transition-all animate-in fade-in zoom-in-95 duration-200",
                 maxWidth
             )}>
                 <div className="flex items-center justify-between p-6 border-b border-gray-800/50">

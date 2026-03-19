@@ -3,8 +3,34 @@
 import Link from 'next/link';
 import { BattlefieldBackground } from '@/components/ui/BattlefieldBackground';
 import { Shield, Check, ArrowLeft, Crown, Zap } from 'lucide-react';
+import api from '@/lib/api';
+import { useState } from 'react';
 
 export default function UpgradePage() {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleUpgrade = async () => {
+        try {
+            setIsLoading(true);
+            setError('');
+            const token = localStorage.getItem('token');
+            const response = await api.post('/payments/create-checkout-session',
+                { planId: 'ai' },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.url) {
+                window.location.href = response.data.url;
+            }
+        } catch (err: any) {
+            console.error('Upgrade error:', err);
+            setError(err.response?.data?.error || err.message || 'Payment initialization failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#050810] text-gray-100">
             <BattlefieldBackground />
@@ -22,10 +48,10 @@ export default function UpgradePage() {
                         <Crown size={16} /> Unlock Your Full Potential
                     </div>
                     <h1 className="text-5xl md:text-6xl font-black mb-6" style={{ fontFamily: 'Cinzel, serif' }}>
-                        Upgrade to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">Elite Squire</span>
+                        Upgrade for <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">Arena Access</span>
                     </h1>
                     <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                        Access unlimited accounts, playbooks, and advanced analytics to dominate the markets.
+                        Your account is currently inactive. You need a subscription to enter the dashboard.
                     </p>
                 </div>
 
@@ -40,7 +66,7 @@ export default function UpgradePage() {
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-bold uppercase tracking-widest mb-6">
                                 <Zap size={12} /> Best Value
                             </div>
-                            <h3 className="text-3xl font-bold mb-4" style={{ fontFamily: 'Cinzel, serif' }}>The Elite Squire</h3>
+                            <h3 className="text-3xl font-bold mb-4" style={{ fontFamily: 'Cinzel, serif' }}>Medysa AI Plan</h3>
                             <div className="flex items-baseline justify-center gap-2 mb-2">
                                 <span className="text-6xl font-black text-white">$14.99</span>
                                 <span className="text-gray-400 text-lg font-medium">/month</span>
@@ -48,8 +74,20 @@ export default function UpgradePage() {
                             <p className="text-xs text-gray-500 uppercase tracking-wider">Cancel Anytime • Instant Access</p>
                         </div>
 
-                        <button className="w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-gray-900 font-black rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(251,191,36,0.3)] hover:shadow-amber-500/50 hover:scale-105 uppercase tracking-widest mb-10 text-center" style={{ fontFamily: 'Cinzel, serif' }}>
-                            Unlock Premium Now
+                        {error && (
+                            <div className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-sm">
+                                <span className="mt-0.5 shrink-0">⚠️</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleUpgrade}
+                            disabled={isLoading}
+                            className="w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 disabled:opacity-50 text-gray-900 font-black rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(251,191,36,0.3)] hover:shadow-amber-500/50 hover:scale-105 uppercase tracking-widest mb-10 text-center"
+                            style={{ fontFamily: 'Cinzel, serif' }}
+                        >
+                            {isLoading ? 'Connecting...' : 'Unlock Premium Now'}
                         </button>
 
                         <div className="space-y-4">
