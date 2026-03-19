@@ -25,8 +25,16 @@ const navItems = [
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+
+    // Dynamic nav items based on tier
+    const dynamicNavItems = navItems.map(item => {
+        if (item.href === '/ai-coach' && user?.tier === 'KNIGHT') {
+            return { ...item, locked: true };
+        }
+        return item;
+    });
 
     // Tribute Easter Egg
     useEffect(() => {
@@ -54,7 +62,7 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2 relative z-20">
-                {navItems.map((item) => {
+                {dynamicNavItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link

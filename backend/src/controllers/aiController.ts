@@ -94,6 +94,18 @@ export async function getSession(req: AuthRequest, res: Response) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
+        // Tier check for history access
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { tier: true }
+        });
+
+        if (!user || user.tier === SubscriptionTier.KNIGHT) {
+            return res.status(403).json({
+                error: 'AI Session history is a premium feature. Please upgrade to the Medysa AI plan.'
+            });
+        }
+
         const { id } = req.params;
 
         const session = await prisma.aiSession.findFirst({
@@ -125,6 +137,18 @@ export async function getSessions(req: AuthRequest, res: Response) {
         const userId = req.user?.userId;
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // Tier check for history access
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { tier: true }
+        });
+
+        if (!user || user.tier === SubscriptionTier.KNIGHT) {
+            return res.status(403).json({
+                error: 'AI Session history is a premium feature. Please upgrade to the Medysa AI plan.'
+            });
         }
 
         const sessions = await prisma.aiSession.findMany({
