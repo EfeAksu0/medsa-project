@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import api from '@/lib/api';
 import { Plus, X, Check, Trash2, ListTodo } from 'lucide-react';
-import { Modal } from '@/components/ui/Modal';
+import { QuickDelete } from '@/components/ui/QuickDelete';
+import { toast } from 'sonner';
 
 interface ToDoItem {
     id: string;
@@ -11,27 +13,15 @@ interface ToDoItem {
     completed: boolean;
 }
 
+const fetcher = (url: string) => api.get(url).then(res => res.data);
+
 export function ToDoWidget() {
-    const [todos, setTodos] = useState<ToDoItem[]>([]);
+    const { data: todos = [], isLoading: loading, mutate: mutateTodos } = useSWR<ToDoItem[]>('/todos', fetcher);
     const [newItem, setNewItem] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
     const fetchTodos = async () => {
-        try {
-            const res = await api.get('/todos');
-            setTodos(res.data);
-        } catch (error) {
-            console.error('Failed to fetch todos', error);
-        } finally {
-            setLoading(false);
-        }
+        mutateTodos();
     };
-
-    useEffect(() => {
-        fetchTodos();
-    }, []);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,8 +29,9 @@ export function ToDoWidget() {
 
         try {
             const res = await api.post('/todos', { content: newItem });
-            setTodos([res.data, ...todos]);
+            mutateTodos([res.data, ...todos], false);
             setNewItem('');
+            mutateTodos();
         } catch (error) {
             console.error('Failed to add todo', error);
         }
@@ -49,34 +40,25 @@ export function ToDoWidget() {
     const handleToggle = async (id: string) => {
         try {
             // Optimistic update
-            setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+            mutateTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t), false);
             await api.patch(`/todos/${id}/toggle`);
+            mutateTodos();
         } catch (error) {
             console.error('Failed to toggle todo', error);
-            // Revert on error would go here
         }
     };
 
-    // Open Modal
-    const requestDelete = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setItemToDelete(id);
-        setDeleteModalOpen(true);
-    };
-
-    // Actual Delete Action
-    const confirmDelete = async () => {
-        if (!itemToDelete) return;
-
+    const handleTaskDelete = async (id: string) => {
+        const prev = todos;
+        mutateTodos(todos.filter(t => t.id !== id), false);
         try {
-            setTodos(todos.filter(t => t.id !== itemToDelete));
-            await api.delete(`/todos/${itemToDelete}`);
-            setDeleteModalOpen(false);
-            setItemToDelete(null);
+            await api.delete(`/todos/${id}`);
+            toast.success('Task deleted');
+            mutateTodos();
         } catch (error) {
             console.error('Failed to delete todo', error);
-            alert('Failed to delete task');
+            mutateTodos(prev);
+            toast.error('Failed to delete task');
         }
     };
 
@@ -131,14 +113,11 @@ export function ToDoWidget() {
                             </div>
 
                             {/* Delete Button - Separate Sibling */}
-                            <button
-                                type="button"
-                                onClick={(e) => requestDelete(todo.id, e)}
-                                className="text-gray-500 hover:text-red-400 transition-colors p-2 hover:bg-red-500/10 rounded-lg ml-2 z-20 relative"
-                                title="Delete Task"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                            <QuickDelete
+                                onDelete={() => handleTaskDelete(todo.id)}
+                                iconSize={16}
+                                className="ml-2 z-20 relative"
+                            />
                         </div>
                     ))
                 )}
@@ -161,31 +140,7 @@ export function ToDoWidget() {
                 </button>
             </form>
 
-            <Modal
-                isOpen={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                title="Delete Rule"
-            >
-                <div className="space-y-4">
-                    <p className="text-gray-300">
-                        Are you sure you want to remove this rule?
-                    </p>
-                    <div className="flex justify-end gap-3 mt-6">
-                        <button
-                            onClick={() => setDeleteModalOpen(false)}
-                            className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmDelete}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+
         </div>
     );
 }

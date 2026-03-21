@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import useSWR from 'swr';
 import Link from 'next/link';
 import { ArrowLeft, Tag, Trash2, Edit2, Save, X, Star, Smile, Meh, Frown, AlertCircle } from 'lucide-react';
+import { QuickDelete } from '@/components/ui/QuickDelete';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -18,13 +20,18 @@ interface JournalEntry {
     userId: string;
 }
 
+const fetcher = (url: string) => api.get(url).then(res => res.data);
+
 export default function JournalEntryPage() {
     const params = useParams();
     const router = useRouter();
     const id = params?.id as string;
 
-    const [entry, setEntry] = useState<JournalEntry | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: entry, isLoading, mutate: mutateEntry } = useSWR<JournalEntry>(
+        id ? `/journal/${id}` : null,
+        fetcher
+    );
+
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -42,27 +49,13 @@ export default function JournalEntryPage() {
     ];
 
     useEffect(() => {
-        const fetchEntry = async () => {
-            if (!id) return;
-            try {
-                const response = await api.get(`/journal/${id}`);
-                const data = response.data;
-                setEntry(data);
-                // Initialize edit state
-                setEditContent(data.content);
-                setEditTags(data.tags.join(', '));
-                setEditMood(data.mood || '');
-                setEditRating(data.rating || 0);
-            } catch (error) {
-                console.error('Failed to fetch entry', error);
-                toast.error("Connection severed to the archives.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchEntry();
-    }, [id]);
+        if (entry) {
+            setEditContent(entry.content);
+            setEditTags(entry.tags.join(', '));
+            setEditMood(entry.mood || '');
+            setEditRating(entry.rating || 0);
+        }
+    }, [entry]);
 
     const handleUpdate = async () => {
         try {
@@ -76,7 +69,7 @@ export default function JournalEntryPage() {
             });
 
             if (response.status === 200) {
-                setEntry(response.data);
+                mutateEntry(response.data);
                 setIsEditing(false);
                 toast.success("Entry updated successfully.");
             } else {
@@ -88,8 +81,6 @@ export default function JournalEntryPage() {
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to burn this page from the archives? This cannot be undone.")) return;
-
         setIsDeleting(true);
         try {
             const response = await api.delete(`/journal/${id}`);
@@ -107,7 +98,7 @@ export default function JournalEntryPage() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && !entry) {
         return (
             <div className="max-w-4xl mx-auto animate-pulse space-y-8">
                 <div className="h-8 bg-gray-800 rounded w-1/3"></div>
@@ -161,13 +152,12 @@ export default function JournalEntryPage() {
                             >
                                 <Edit2 size={16} /> Edit
                             </button>
-                            <button
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-red-900/20 text-gray-400 hover:text-red-400 rounded transition-colors border border-gray-800 hover:border-red-900/50 font-mono text-sm"
-                            >
-                                <Trash2 size={16} /> {isDeleting ? 'Burning...' : 'Delete'}
-                            </button>
+                            <QuickDelete
+                                onDelete={handleDelete}
+                                label="Delete"
+                                iconSize={16}
+                                className="px-4 py-2 bg-gray-900 border border-gray-800 hover:border-red-900/50 font-mono text-sm h-[38px]"
+                            />
                         </>
                     )}
                 </div>

@@ -8,6 +8,7 @@ import { TradeTable } from '@/components/trades/TradeTable';
 import { TradeForm } from '@/components/trades/TradeForm';
 import { Modal } from '@/components/ui/Modal';
 import { Plus, Folder, FolderPlus, ArrowLeft, Trash2 } from 'lucide-react';
+import { QuickDelete } from '@/components/ui/QuickDelete';
 import { toast } from 'sonner';
 
 interface TradeFolder {
@@ -44,15 +45,6 @@ export default function TradesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
-
-  // Create Folder State
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [isFolderCreating, setIsFolderCreating] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteTrade, setNoteTrade] = useState<Trade | null>(null);
   const [tempNote, setTempNote] = useState('');
@@ -88,23 +80,27 @@ export default function TradesPage() {
     }
   };
 
-  const handleDeleteTrade = (id: string) => {
-    setTradeToDelete(id);
-    setIsDeleteModalOpen(true);
-  };
+  const handleDeleteTrade = async (id: string) => {
+    // Optimistic UI: Remove from list immediately
+    const previousData = tradesData;
+    if (tradesData) {
+      mutateTrades({ ...tradesData, trades: tradesData.trades.filter(t => t.id !== id) }, false);
+    }
 
-  const confirmDeleteTrade = async () => {
-    if (!tradeToDelete) return;
     try {
-      await api.delete(`/trades/${tradeToDelete}`);
-      mutateTrades(); // Refresh trades
-      setIsDeleteModalOpen(false);
-      setTradeToDelete(null);
+      await api.delete(`/trades/${id}`);
+      toast.success('Trade deleted');
+      mutateTrades(); // Final sync
     } catch (error) {
       console.error('Failed to delete trade', error);
       toast.error('Failed to delete trade');
+      if (previousData) mutateTrades(previousData); // Rollback
     }
   };
+
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isFolderCreating, setIsFolderCreating] = useState(false);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
@@ -127,19 +123,17 @@ export default function TradesPage() {
     }
   };
 
-  const handleDeleteFolder = (e: React.MouseEvent, folderId: string) => {
-    e.stopPropagation();
-    setDeleteConfirm(folderId);
-  };
+  const executeDeleteFolder = async (folderId: string) => {
+    // Optimistic UI for SWR
+    const previousFolders = folders;
+    mutateFolders(folders.filter(f => f.id !== folderId), false);
 
-  const executeDeleteFolder = async () => {
-    if (!deleteConfirm) return;
     try {
-      await api.delete(`/trades/folders/${deleteConfirm}`);
+      await api.delete(`/trades/folders/${folderId}`);
       toast.success("Folder deleted.");
-      setDeleteConfirm(null);
       mutateFolders();
     } catch (error) {
+      mutateFolders(previousFolders); // Rollback
       toast.error("Error deleting folder.");
     }
   };
@@ -306,12 +300,11 @@ export default function TradesPage() {
                   >
                     <div className="flex justify-between items-start pointer-events-none">
                       <Folder size={28} className="text-amber-600 group-hover:text-amber-500 transition-colors" />
-                      <button
-                        onClick={(e) => handleDeleteFolder(e, folder.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition-all p-1 pointer-events-auto"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <QuickDelete
+                        onDelete={() => executeDeleteFolder(folder.id)}
+                        iconSize={16}
+                        className="opacity-0 group-hover:opacity-100 transition-all p-1 pointer-events-auto"
+                      />
                     </div>
                     <div className="pointer-events-none">
                       <h3 className="font-bold text-gray-200 truncate">{folder.name}</h3>
@@ -356,71 +349,6 @@ export default function TradesPage() {
           isSubmitting={isSubmitting}
         />
       </Modal>
-
-      {/* Delete Trade Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Delete Trade"
-      >
-        <div className="space-y-6">
-          <p className="text-gray-300">
-            Are you sure you want to delete this trade? This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setIsDeleteModalOpen(false)}
-              className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={confirmDeleteTrade}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-            >
-              Delete Trade
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Delete FOLDER Confirmation Modal */}
-      {
-        deleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-gray-900 border border-red-900/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl shadow-red-900/20 transform scale-100 animate-in zoom-in-95 duration-200">
-              <div className="flex items-center gap-3 mb-4 text-red-500">
-                <div className="p-2 bg-red-900/20 rounded-full">
-                  <Trash2 size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-white">Delete Folder?</h3>
-              </div>
-
-              <p className="text-gray-400 mb-6 leading-relaxed">
-                Are you sure you want to delete this folder? <br />
-                <span className="text-red-400 font-bold text-sm bg-red-950/30 px-2 py-0.5 rounded border border-red-900/30 mt-2 inline-block">
-                  ⚠ This will also delete all trades inside it.
-                </span>
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={executeDeleteFolder}
-                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-900/20"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
 
       {/* Quick Note Modal */}
       <Modal

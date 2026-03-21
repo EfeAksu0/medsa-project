@@ -50,13 +50,13 @@ export default function DashboardPage() {
     const { data: statsData, isLoading: isLoadingStats } = useSWR<DashboardStats>(
         isDemo ? null : '/analytics/stats',
         fetcher,
-        { refreshInterval: 30000 }
+        { refreshInterval: 60000 }
     );
 
     const { data: equityDataRes, isLoading: isLoadingEquity } = useSWR<EquityPoint[]>(
         isDemo ? null : '/analytics/equity-curve',
         fetcher,
-        { refreshInterval: 30000 }
+        { refreshInterval: 60000 }
     );
 
     // DEMO DATA FALLBACK

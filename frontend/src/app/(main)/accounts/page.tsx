@@ -1,41 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import api from '@/lib/api';
 import { Account, AccountFormData } from '@/types/trading';
 import { Plus, TrendingUp, Target, Trash2, AlertTriangle, Wallet, ChevronRight } from 'lucide-react';
+import { QuickDelete } from '@/components/ui/QuickDelete';
+import { toast } from 'sonner';
 import { Modal } from '@/components/ui/Modal';
 import { AccountForm } from '@/components/accounts/AccountForm';
 import { cn } from '@/lib/utils';
 
+const fetcher = (url: string) => api.get(url).then(res => res.data);
+
 export default function AccountsPage() {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: accounts = [], isLoading, mutate: mutateAccounts } = useSWR<Account[]>('/accounts', fetcher);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const fetchAccounts = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get('/accounts');
-            setAccounts(res.data);
-        } catch (error) {
-            console.error('Failed to fetch accounts', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchAccounts(); }, []);
 
     const handleSubmit = async (data: AccountFormData) => {
         try {
             setIsSubmitting(true);
             await api.post('/accounts', data);
             setIsAddModalOpen(false);
-            fetchAccounts();
+            mutateAccounts();
         } catch (error) {
             console.error('Failed to create account', error);
         } finally {
@@ -43,26 +31,18 @@ export default function AccountsPage() {
         }
     };
 
-    const confirmDelete = async () => {
-        if (!accountToDelete) return;
-        setIsSubmitting(true);
+    const handleAccountDelete = async (id: string) => {
         const prev = accounts;
-        setAccounts(p => p.filter(a => a.id !== accountToDelete));
+        mutateAccounts(accounts.filter(a => a.id !== id), false);
         try {
-            await api.delete(`/accounts/${accountToDelete}`);
-            setIsDeleteModalOpen(false);
-            setAccountToDelete(null);
-        } catch {
-            setAccounts(prev);
-        } finally {
-            setIsSubmitting(false);
+            await api.delete(`/accounts/${id}`);
+            toast.success('Account deleted');
+            mutateAccounts();
+        } catch (error) {
+            console.error('Failed to delete account', error);
+            toast.error('Failed to delete account');
+            mutateAccounts(prev);
         }
-    };
-
-    const handleDeleteClick = (e: React.MouseEvent, id: string) => {
-        e.preventDefault(); e.stopPropagation();
-        setAccountToDelete(id);
-        setIsDeleteModalOpen(true);
     };
 
     const getProgress = (current: number, goal?: number | null) =>
@@ -85,7 +65,7 @@ export default function AccountsPage() {
                 </button>
             </div>
 
-            {loading ? (
+            {isLoading && accounts.length === 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[1, 2].map(i => <div key={i} className="h-52 bg-gray-900/50 rounded-2xl animate-pulse border border-gray-800" />)}
                 </div>
@@ -115,12 +95,11 @@ export default function AccountsPage() {
                                             {account.type}
                                         </span>
                                     </div>
-                                    <button
-                                        onClick={(e) => handleDeleteClick(e, account.id)}
-                                        className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 size={15} />
-                                    </button>
+                                    <QuickDelete
+                                        onDelete={() => handleAccountDelete(account.id)}
+                                        iconSize={15}
+                                        className="opacity-0 group-hover:opacity-100 transition-all p-1.5"
+                                    />
                                 </div>
 
                                 {/* Balance */}
@@ -171,24 +150,7 @@ export default function AccountsPage() {
                 <AccountForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
             </Modal>
 
-            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete Account">
-                <div className="space-y-5">
-                    <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
-                        <div>
-                            <p className="font-semibold text-red-400 text-sm">This cannot be undone</p>
-                            <p className="text-sm text-gray-400 mt-1">All trades linked to this account will be permanently deleted.</p>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm">Cancel</button>
-                        <button onClick={confirmDelete} disabled={isSubmitting} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2">
-                            <Trash2 size={15} />
-                            {isSubmitting ? 'Deleting...' : 'Delete Account'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+
         </div>
     );
 }

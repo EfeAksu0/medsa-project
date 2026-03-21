@@ -23,6 +23,7 @@ import {
     Tags,
     ChevronDown,
     Check,
+    Plus,
     Image as ImageIcon,
     Upload,
     X
@@ -72,6 +73,8 @@ export function TradeForm({ initialData, onSubmit, isSubmitting }: TradeFormProp
     const [models, setModels] = useState<Model[]>([]);
     const [loadingAccounts, setLoadingAccounts] = useState(true);
     const [loadingModels, setLoadingModels] = useState(true);
+    const [customInstruments, setCustomInstruments] = useState<string[]>([]);
+    const [newCustomInstrument, setNewCustomInstrument] = useState('');
 
     // Drag & Drop State
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -143,11 +146,45 @@ export function TradeForm({ initialData, onSubmit, isSubmitting }: TradeFormProp
         setValue('imageUrl', null);
     };
 
-    const instruments = [
+    const defaultInstruments = [
         'US30', 'NAS100', 'SPX500', 'GER40',
         'EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'USDCAD', 'AUDUSD', 'NZDUSD',
         'BTCUSD', 'ETHUSD', 'SOLUSD'
     ];
+
+    const allInstruments = Array.from(new Set([...defaultInstruments, ...customInstruments]));
+
+    // Load custom instruments
+    useEffect(() => {
+        const saved = localStorage.getItem('medysa_custom_instruments');
+        if (saved) {
+            try {
+                setCustomInstruments(JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to parse custom instruments");
+            }
+        }
+    }, []);
+
+    // Save custom instruments
+    useEffect(() => {
+        if (customInstruments.length > 0) {
+            localStorage.setItem('medysa_custom_instruments', JSON.stringify(customInstruments));
+        }
+    }, [customInstruments]);
+
+    const handleAddCustomInstrument = (e?: React.MouseEvent | React.KeyboardEvent) => {
+        if (e) e.stopPropagation();
+        if (!newCustomInstrument.trim()) return;
+
+        const upper = newCustomInstrument.trim().toUpperCase();
+        if (!allInstruments.includes(upper)) {
+            setCustomInstruments(prev => [...prev, upper]);
+        }
+        setValue('instrument', upper, { shouldValidate: true });
+        setNewCustomInstrument('');
+        setShowInstruments(false);
+    };
 
     // Set initial values including modelId
     useEffect(() => {
@@ -279,25 +316,43 @@ export function TradeForm({ initialData, onSubmit, isSubmitting }: TradeFormProp
                             </div>
 
                             {showInstruments && (
-                                <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100">
-                                    {instruments.map((inst) => (
-                                        <button
-                                            key={inst}
-                                            type="button"
-                                            onClick={() => handleInstrumentSelect(inst)}
-                                            className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-blue-600/10 hover:text-blue-400 transition-colors border-b border-gray-800 last:border-0 flex items-center justify-between group/item"
-                                        >
-                                            {inst}
-                                            <Check size={14} className="opacity-0 group-hover/item:opacity-100 text-blue-500 transition-opacity" />
-                                        </button>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowInstruments(false)}
-                                        className="w-full p-3 text-xs text-blue-400 hover:bg-blue-600/10 text-center bg-gray-950/50 border-t border-gray-800 font-medium transition-colors"
-                                    >
-                                        Use custom instrument
-                                    </button>
+                                <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto flex flex-col backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="flex-1 overflow-y-auto">
+                                        {allInstruments.map((inst) => (
+                                            <button
+                                                key={inst}
+                                                type="button"
+                                                onClick={() => handleInstrumentSelect(inst)}
+                                                className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-blue-600/10 hover:text-blue-400 transition-colors border-b border-gray-800 last:border-0 flex items-center justify-between group/item"
+                                            >
+                                                {inst}
+                                                <Check size={14} className="opacity-0 group-hover/item:opacity-100 text-blue-500 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Add Custom Pair Section */}
+                                    <div className="p-2 bg-gray-950 border-t border-gray-800 sticky bottom-0">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={newCustomInstrument}
+                                                onChange={(e) => setNewCustomInstrument(e.target.value.toUpperCase())}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddCustomInstrument(e)}
+                                                placeholder="ADD PAIR (e.g. BTCUSD)"
+                                                className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-blue-500 transition-all font-mono"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddCustomInstrument()}
+                                                disabled={!newCustomInstrument.trim()}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                                            >
+                                                <Plus size={14} />
+                                                ADD
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

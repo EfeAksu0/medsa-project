@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import useSWR from 'swr';
 import Link from 'next/link';
 import { Plus, Search, Calendar, Tag, ChevronRight, Star, Folder, FolderPlus, ArrowLeft, Trash2, Edit2, FolderMinus } from 'lucide-react';
+import { QuickDelete } from '@/components/ui/QuickDelete';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -27,56 +29,38 @@ interface JournalFolder {
     };
 }
 
+const fetcher = (url: string) => api.get(url).then(res => res.data);
+
 export default function NotesPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     // State
-    const [entries, setEntries] = useState<JournalEntry[]>([]);
-    const [folders, setFolders] = useState<JournalFolder[]>([]);
     const [currentFolder, setCurrentFolder] = useState<JournalFolder | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+
+    // SWR for Folders (only fetch if at root)
+    const { data: folders = [], mutate: mutateFolders } = useSWR<JournalFolder[]>(
+        !currentFolder ? '/journal/folders' : null,
+        fetcher
+    );
+
+    // SWR for Entries
+    const entriesKey = currentFolder
+        ? `/journal?folderId=${currentFolder.id}`
+        : '/journal?root=true';
+
+    const { data: entries = [], isLoading, mutate: mutateEntries } = useSWR<JournalEntry[]>(
+        entriesKey,
+        fetcher
+    );
 
     // Create Folder State
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchData();
-    }, [currentFolder]);
 
     const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            // Fetch Folders
-            let fetchedFolders: JournalFolder[] = [];
-            if (!currentFolder) {
-                const folderRes = await api.get('/journal/folders');
-                if (folderRes.status === 200) fetchedFolders = folderRes.data;
-            }
-            setFolders(fetchedFolders);
-
-            // Fetch Entries
-            const url = '/journal';
-            const params: Record<string, string> = {};
-            if (currentFolder) {
-                params.folderId = currentFolder.id;
-            } else {
-                params.root = 'true';
-            }
-
-            const entriesRes = await api.get(url, { params });
-            if (entriesRes.status === 200) {
-                setEntries(entriesRes.data);
-            }
-
-        } catch (error) {
-            console.error('Failed to fetch data', error);
-            toast.error("Failed to load archives.");
-        } finally {
-            setIsLoading(false);
-        }
+        mutateFolders();
+        mutateEntries();
     };
 
     const handleCreateFolder = async () => {
@@ -89,7 +73,7 @@ export default function NotesPage() {
                 toast.success("Folder created.");
                 setNewFolderName('');
                 setIsCreatingFolder(false);
-                fetchData();
+                mutateFolders();
             } else {
                 toast.error("Failed to create folder.");
             }
@@ -98,26 +82,32 @@ export default function NotesPage() {
         }
     };
 
-    const handleDeleteFolder = (e: React.MouseEvent, folderId: string) => {
-        e.stopPropagation();
-        setDeleteConfirm(folderId);
-    };
-
-    const executeDeleteFolder = async () => {
-        if (!deleteConfirm) return;
+    const executeDeleteFolder = async (folderId: string) => {
+        const prev = folders;
+        mutateFolders(folders.filter(f => f.id !== folderId), false);
 
         try {
-            const response = await api.delete(`/journal/folders/${deleteConfirm}`);
-
-            if (response.status === 200) {
-                toast.success("Folder deleted.");
-                fetchData();
-                setDeleteConfirm(null);
-            } else {
-                toast.error("Failed to delete folder.");
-            }
+            await api.delete(`/journal/folders/${folderId}`);
+            toast.success("Folder deleted.");
+            mutateFolders();
         } catch (error) {
             toast.error("Error deleting folder.");
+            mutateFolders(prev);
+        }
+    };
+
+    const handleDeleteEntry = async (entryId: string) => {
+        const prev = entries;
+        mutateEntries(entries.filter(e => e.id !== entryId), false);
+
+        try {
+            await api.delete(`/journal/${entryId}`);
+            toast.success("Entry removed.");
+            mutateEntries();
+        } catch (error) {
+            console.error("Failed to delete entry", error);
+            toast.error("Failed to delete entry.");
+            mutateEntries(prev);
         }
     };
 
@@ -211,7 +201,7 @@ export default function NotesPage() {
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
 
-                {isLoading ? (
+                {isLoading && entries.length === 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {[1, 2, 3].map((i) => (
                             <div key={i} className="h-32 bg-gray-900/30 rounded-xl animate-pulse" />
@@ -245,12 +235,11 @@ export default function NotesPage() {
                                     >
                                         <div className="flex justify-between items-start pointer-events-none">
                                             <Folder size={32} className="text-amber-600 group-hover:text-amber-500 transition-colors" />
-                                            <button
-                                                onClick={(e) => handleDeleteFolder(e, folder.id)}
-                                                className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition-all p-1 pointer-events-auto"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <QuickDelete
+                                                onDelete={() => executeDeleteFolder(folder.id)}
+                                                iconSize={16}
+                                                className="opacity-0 group-hover:opacity-100 transition-all p-1 pointer-events-auto"
+                                            />
                                         </div>
                                         <div className="pointer-events-none">
                                             <h3 className="font-bold text-gray-200 truncate">{folder.name}</h3>
@@ -314,6 +303,13 @@ export default function NotesPage() {
                                                         {entry.mood}
                                                     </span>
                                                 )}
+                                                <div className="border-l border-gray-700 pl-2">
+                                                    <QuickDelete
+                                                        onDelete={() => handleDeleteEntry(entry.id)}
+                                                        iconSize={12}
+                                                        className="opacity-0 group-hover:opacity-100 transition-all"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
 
@@ -340,41 +336,7 @@ export default function NotesPage() {
                 )}
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-gray-900 border border-red-900/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl shadow-red-900/20 transform scale-100 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center gap-3 mb-4 text-red-500">
-                            <div className="p-2 bg-red-900/20 rounded-full">
-                                <Trash2 size={24} />
-                            </div>
-                            <h3 className="text-xl font-bold text-white">Delete Folder?</h3>
-                        </div>
 
-                        <p className="text-gray-400 mb-6 leading-relaxed">
-                            Are you sure you want to delete this folder? <br />
-                            <span className="text-red-400 font-bold text-sm bg-red-950/30 px-2 py-0.5 rounded border border-red-900/30 mt-2 inline-block">
-                                ⚠ This will also delete all notes inside it.
-                            </span>
-                        </p>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={executeDeleteFolder}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-900/20"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

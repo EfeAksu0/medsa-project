@@ -1,10 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import useSWR from 'swr';
 import { sendChatMessage, AiMessage, getSessions, getSession } from '@/lib/aiApi';
 import { Send, Sparkles } from 'lucide-react';
 
 export function AiCoach() {
+    const { data: sessions = [] } = useSWR('/ai/sessions', getSessions);
+    const lastSessionId = sessions?.[0]?.id;
+
+    const { data: sessionDetails, mutate: mutateSession } = useSWR(
+        lastSessionId ? `/ai/sessions/${lastSessionId}` : null,
+        () => getSession(lastSessionId!)
+    );
+
     const [messages, setMessages] = useState<AiMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -19,30 +28,13 @@ export function AiCoach() {
         scrollToBottom();
     }, [messages]);
 
-    // Load history on mount
+    // Sync messages with SWR
     useEffect(() => {
-        const loadSession = async () => {
-            try {
-                // Get all sessions
-                const sessions = await getSessions();
-                if (sessions && sessions.length > 0) {
-                    // Use the most recent session
-                    const lastSession = sessions[0];
-                    setSessionId(lastSession.id);
-
-                    // Fetch full history for this session
-                    const sessionDetails = await getSession(lastSession.id);
-                    if (sessionDetails && sessionDetails.messages) {
-                        setMessages(sessionDetails.messages);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load history:', error);
-            }
-        };
-
-        loadSession();
-    }, []);
+        if (sessionDetails?.messages) {
+            setMessages(sessionDetails.messages);
+            setSessionId(lastSessionId);
+        }
+    }, [sessionDetails, lastSessionId]);
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
@@ -63,9 +55,19 @@ export function AiCoach() {
 
             if (!sessionId) {
                 setSessionId(response.sessionId);
+                // We'd ideally mutate the sessions list here to show the new session,
+                // but since it's a new interaction, SWR will pick it up or we can manual mutate.
             }
 
             setMessages((prev) => [...prev, response.message]);
+            // Sync back to SWR cache if we want persistence across re-mounts
+            if (sessionId && sessionDetails) {
+                mutateSession({
+                    ...sessionDetails,
+                    id: sessionDetails.id!, // Assured by the check
+                    messages: [...(sessionDetails.messages || []), response.message]
+                }, false);
+            }
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
             const errData = error.response?.data;
@@ -128,21 +130,36 @@ export function AiCoach() {
                     </div>
                 )}
 
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                {messages.map((msg) => {
+                    const isUser = msg.role === 'user';
+                    const emotion = msg.emotion;
+
+                    // Dynamic styles based on emotion
+                    let assistantStyles = 'bg-gray-800/50 border-gray-700/50 shadow-none';
+                    if (emotion === 'MEDIC') {
+                        assistantStyles = 'bg-amber-950/20 border-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.1)]';
+                    } else if (emotion === 'SNIPER') {
+                        assistantStyles = 'bg-emerald-950/20 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]';
+                    } else if (emotion === 'FORENSIC') {
+                        assistantStyles = 'bg-blue-950/20 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.1)]';
+                    }
+
+                    return (
                         <div
-                            className={`max-w-[70%] rounded-2xl p-4 ${msg.role === 'user'
-                                ? 'bg-purple-600/20 border border-purple-500/30 text-white'
-                                : 'bg-gray-800/50 border border-gray-700/50 text-gray-100'
-                                }`}
+                            key={msg.id}
+                            className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                         >
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            <div
+                                className={`max-w-[85%] rounded-2xl p-4 transition-all duration-500 ${isUser
+                                    ? 'bg-purple-600/20 border border-purple-500/30 text-white'
+                                    : `border text-gray-100 ${assistantStyles}`
+                                    }`}
+                            >
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
                 {loading && (
                     <div className="flex justify-start">

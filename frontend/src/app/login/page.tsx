@@ -108,7 +108,8 @@ export default function LoginPage() {
                     </div>
 
                     {/* Footer */}
-                    <p className="text-gray-600 text-sm">© 2025 Medysa. All rights reserved.</p>
+                    <p className="text-gray-500 text-xs italic font-serif mb-2">&quot;In the arena of life, let humility be your shield, kindness your sword, and love your greatest victory.&quot;</p>
+                    <p className="text-gray-600 text-[10px] uppercase tracking-widest">© 2026 Medysa Trading Journal. All rights reserved.</p>
                 </div>
 
                 {/* ── RIGHT PANEL ── */}

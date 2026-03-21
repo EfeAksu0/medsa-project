@@ -118,10 +118,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
                 let subscriptionEndsAt = null;
 
                 if (subscriptionId) {
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                    // TODO: current_period_end no longer exists in Stripe SDK
-                    // Will use billing_cycle_anchor + 1 month for now
-                    subscriptionEndsAt = null; // Temporary: need to calculate proper end date
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
+                    subscriptionEndsAt = new Date(subscription.current_period_end * 1000);
                 }
 
                 await prisma.user.update({
@@ -149,8 +147,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                     where: { id: user.id },
                     data: {
                         subscriptionStatus: subscription.status,
-                        // TODO: current_period_end no longer exists in Stripe SDK
-                        subscriptionEndsAt: null,
+                        subscriptionEndsAt: new Date((subscription as any).current_period_end * 1000),
                     },
                 });
             }
@@ -168,8 +165,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                     where: { id: user.id },
                     data: {
                         subscriptionStatus: 'canceled',
-                        // TODO: current_period_end no longer exists in Stripe SDK
-                        subscriptionEndsAt: null,
+                        subscriptionEndsAt: new Date((subscription as any).current_period_end * 1000),
                     },
                 });
             }

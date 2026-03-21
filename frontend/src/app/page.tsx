@@ -457,7 +457,7 @@ export default function LandingPage() {
       <FAQSection />
 
       {/* Footer */}
-      <footer className="py-20 border-t border-white/5 bg-black/40">
+      <footer className="pt-20 pb-44 border-t border-white/5 bg-black/40 relative z-10">
         <div className="container mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-600 grayscale opacity-50 shrink-0 bg-black/50">
@@ -467,7 +467,10 @@ export default function LandingPage() {
               MEDYSA
             </span>
           </div>
-          <p className="text-gray-600 text-sm mb-8">© 2026 Medysa Trading Journal. Forged for the elite.</p>
+          <p className="text-gray-400 text-xs italic font-serif mb-4 max-w-lg mx-auto leading-relaxed">
+            &quot;In the arena of life, let humility be your shield, kindness your sword, and love your greatest victory.&quot;
+          </p>
+          <p className="text-gray-600 text-[10px] uppercase tracking-widest mb-8">© 2026 Medysa Trading Journal. All rights reserved.</p>
           <div className="flex justify-center gap-8 text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
             <Link href="#" className="hover:text-amber-500 transition-colors">Twitter</Link>
             <Link href="#" className="hover:text-amber-500 transition-colors">Discord</Link>

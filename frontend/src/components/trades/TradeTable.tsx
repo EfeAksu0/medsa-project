@@ -4,11 +4,12 @@ import { Trade } from '@/types/trade';
 import { Edit2, Trash2, Plus, Calendar, DollarSign, TrendingUp, BarChart3, Target, Brain, StickyNote, FolderMinus, Image as LucideImage } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { API_URL } from '@/lib/api';
+import { QuickDelete } from '@/components/ui/QuickDelete';
 
 interface TradeTableProps {
   trades: Trade[];
   onEdit: (trade: Trade) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void> | void;
   onNoteClick: (trade: Trade) => void;
   onAddClick?: () => void;
   draggableRows?: boolean;
@@ -256,16 +257,10 @@ export function TradeTable({
                     >
                       <Edit2 size={12} />
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(trade.id);
-                      }}
-                      className="p-1 hover:bg-gray-700/50 rounded text-red-400 transition-colors"
-                      title="Delete trade"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <QuickDelete
+                      onDelete={() => onDelete(trade.id)}
+                      iconSize={12}
+                    />
                   </div>
                 </td>
               </tr>

@@ -1,41 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import api from '@/lib/api';
 import { Model, ModelFormData } from '@/types/trading';
 import { Plus, TrendingUp, Target, BarChart3, Trash2, Brain, AlertTriangle } from 'lucide-react';
+import { QuickDelete } from '@/components/ui/QuickDelete';
+import { toast } from 'sonner';
 import { Modal } from '@/components/ui/Modal';
 import { ModelForm } from '@/components/models/ModelForm';
 import { cn } from '@/lib/utils';
 
+const fetcher = (url: string) => api.get(url).then(res => res.data);
+
 export default function ModelsPage() {
-    const [models, setModels] = useState<Model[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: models = [], isLoading, mutate: mutateModels } = useSWR<Model[]>('/models', fetcher);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [modelToDelete, setModelToDelete] = useState<{ id: string, name: string } | null>(null);
-
-    const fetchModels = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get('/models');
-            setModels(res.data);
-        } catch (error) {
-            console.error('Failed to fetch models', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchModels(); }, []);
 
     const handleSubmit = async (data: ModelFormData) => {
         try {
             setIsSubmitting(true);
             await api.post('/models', data);
             setIsModalOpen(false);
-            fetchModels();
+            mutateModels();
         } catch (error) {
             console.error('Failed to create model', error);
         } finally {
@@ -43,15 +31,18 @@ export default function ModelsPage() {
         }
     };
 
-    const handleDeleteModel = async () => {
-        if (!modelToDelete) return;
+    const handleDeleteModel = async (id: string) => {
+        const previousModels = models;
+        mutateModels(models.filter(m => m.id !== id), false);
+
         try {
-            await api.delete(`/models/${modelToDelete.id}`);
-            setModels(models.filter(m => m.id !== modelToDelete.id));
-            setIsDeleteModalOpen(false);
-            setModelToDelete(null);
+            await api.delete(`/models/${id}`);
+            toast.success('Model deleted');
+            mutateModels();
         } catch (error) {
             console.error('Failed to delete model', error);
+            toast.error('Failed to delete model');
+            mutateModels(previousModels);
         }
     };
 
@@ -72,7 +63,7 @@ export default function ModelsPage() {
                 </button>
             </div>
 
-            {loading ? (
+            {isLoading && models.length === 0 ? (
                 <div className="space-y-3">
                     {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-900/50 rounded-xl animate-pulse border border-gray-800" />)}
                 </div>
@@ -128,16 +119,11 @@ export default function ModelsPage() {
                                 <span className="text-gray-400 text-sm">{model.avgSL?.toFixed(2) || <span className="text-gray-700">—</span>}</span>
                                 <span className="text-gray-400 text-sm">{model.avgRR?.toFixed(2) || <span className="text-gray-700">—</span>}</span>
                                 <span className="text-blue-400 font-semibold text-sm">{model.maxRR?.toFixed(2) || <span className="text-gray-700">—</span>}</span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setModelToDelete({ id: model.id, name: model.name });
-                                        setIsDeleteModalOpen(true);
-                                    }}
-                                    className="p-1.5 text-gray-700 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                >
-                                    <Trash2 size={15} />
-                                </button>
+                                <QuickDelete
+                                    onDelete={() => handleDeleteModel(model.id)}
+                                    iconSize={15}
+                                    className="p-1.5 opacity-0 group-hover:opacity-100 transition-all"
+                                />
                             </div>
                         );
                     })}
@@ -148,24 +134,7 @@ export default function ModelsPage() {
                 <ModelForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
             </Modal>
 
-            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete Model">
-                <div className="space-y-5">
-                    <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={20} />
-                        <div>
-                            <p className="font-semibold text-red-400 text-sm">Delete <span className="text-white">{modelToDelete?.name}</span>?</p>
-                            <p className="text-sm text-gray-400 mt-1">This action cannot be undone.</p>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm">Cancel</button>
-                        <button onClick={handleDeleteModel} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
-                            <Trash2 size={15} />
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+
         </div>
     );
 }
