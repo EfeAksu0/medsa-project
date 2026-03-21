@@ -28,14 +28,20 @@ export function AiCoach() {
         scrollToBottom();
     }, [messages]);
 
-    // Sync messages with SWR
+    // Sync messages with SWR only if SWR has more messages than local state (or local is empty)
     useEffect(() => {
-        // Don't overwrite local messages while we have a pending message in flight
-        if (sessionDetails?.messages && !loading) {
-            setMessages(sessionDetails.messages);
+        if (sessionDetails?.messages) {
+            setMessages(prev => {
+                // If SWR has identical or more messages, trust SWR
+                if (sessionDetails.messages.length >= prev.length) {
+                    return sessionDetails.messages;
+                }
+                // Otherwise keep our optimistic local state
+                return prev;
+            });
             setSessionId(lastSessionId);
         }
-    }, [sessionDetails, lastSessionId, loading]);
+    }, [sessionDetails, lastSessionId]);
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
@@ -51,14 +57,6 @@ export function AiCoach() {
         setInput('');
         setLoading(true);
 
-        // Optimistically update SWR cache IMMEDIATELY so component remounts don't lose the message while waiting for AI
-        if (sessionId && sessionDetails) {
-            mutateSession({
-                ...sessionDetails,
-                messages: [...(sessionDetails.messages || []), userMessage]
-            }, false);
-        }
-
         try {
             const response = await sendChatMessage(input, sessionId);
 
@@ -67,15 +65,13 @@ export function AiCoach() {
             }
 
             setMessages((prev) => [...prev, response.message]);
-            // Sync back to SWR cache adding the final response
-            if (sessionDetails || response.sessionId) {
-                const currentSessionDetails = sessionDetails || { id: response.sessionId, userId: '', createdAt: '', updatedAt: '', messages: [] };
-                mutateSession({
-                    ...currentSessionDetails,
-                    id: currentSessionDetails.id!,
-                    messages: [...(currentSessionDetails.messages || []), userMessage, response.message]
-                }, false);
+
+            // Force SWR to fetch the latest genuine state from the database 
+            // instead of doing complex manual cache mutations
+            if (response.sessionId) {
+                mutateSession();
             }
+
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
             const errData = error.response?.data;
