@@ -14,11 +14,17 @@ export function AiCoach() {
         () => getSession(lastSessionId!)
     );
 
-    const [messages, setMessages] = useState<AiMessage[]>([]);
+    const [pendingMessage, setPendingMessage] = useState<AiMessage | null>(null);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | undefined>();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Single source of truth combined with transient optimistic state
+    const displayMessages = sessionDetails?.messages ? [...sessionDetails.messages] : [];
+    if (pendingMessage && !displayMessages.find(m => m.id === pendingMessage.id || m.content === pendingMessage.content)) {
+        displayMessages.push(pendingMessage);
+    }
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,66 +32,45 @@ export function AiCoach() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [displayMessages, loading]);
 
-    // Sync messages with SWR only if SWR has more messages than local state (or local is empty)
     useEffect(() => {
-        if (sessionDetails?.messages) {
-            setMessages(prev => {
-                // If SWR has identical or more messages, trust SWR
-                if (sessionDetails.messages.length >= prev.length) {
-                    return sessionDetails.messages;
-                }
-                // Otherwise keep our optimistic local state
-                return prev;
-            });
+        if (lastSessionId && !sessionId) {
             setSessionId(lastSessionId);
         }
-    }, [sessionDetails, lastSessionId]);
+    }, [lastSessionId, sessionId]);
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
 
         const userMessage: AiMessage = {
-            id: Date.now().toString(),
+            id: `temp-${Date.now()}`,
             role: 'user',
             content: input,
             createdAt: new Date().toISOString(),
         };
 
-        setMessages((prev) => [...prev, userMessage]);
+        setPendingMessage(userMessage);
         setInput('');
         setLoading(true);
 
         try {
             const response = await sendChatMessage(input, sessionId);
 
-            if (!sessionId) {
+            if (!sessionId && response.sessionId) {
                 setSessionId(response.sessionId);
             }
 
-            setMessages((prev) => [...prev, response.message]);
+            // Backend saved everything. Force SWR cache refresh, clear pending
+            setPendingMessage(null);
 
-            // Force SWR to fetch the latest genuine state from the database 
-            // instead of doing complex manual cache mutations
             if (response.sessionId) {
                 mutateSession();
             }
 
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
-            const errData = error.response?.data;
-            const errorMessage = errData?.detail || errData?.error || error.message || 'System Error: Unable to complete analysis. Please retry.';
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: Date.now().toString(),
-                    role: 'assistant',
-                    content: `⚠️ ${errorMessage}`,
-                    createdAt: new Date().toISOString(),
-                },
-            ]);
+            setPendingMessage(null); // Clear optimistic on error
         } finally {
             setLoading(false);
         }
@@ -124,7 +109,7 @@ export function AiCoach() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.length === 0 && (
+                {displayMessages.length === 0 && !loading && (
                     <div className="text-center py-12">
                         <Sparkles size={48} className="text-purple-500/30 mx-auto mb-4" />
                         <p className="text-gray-400 text-lg mb-2">System Ready.</p>
@@ -134,7 +119,7 @@ export function AiCoach() {
                     </div>
                 )}
 
-                {messages.map((msg) => {
+                {displayMessages.map((msg) => {
                     const isUser = msg.role === 'user';
                     const emotion = msg.emotion;
 
