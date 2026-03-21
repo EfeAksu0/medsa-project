@@ -6,40 +6,37 @@ import { sendChatMessage, AiMessage, getSessions, getSession } from '@/lib/aiApi
 import { Send, Sparkles } from 'lucide-react';
 
 export function AiCoach() {
+    // ── Session discovery ────────────────────────────────────────────────────
     const { data: sessions = [] } = useSWR('/ai/sessions', getSessions);
     const lastSessionId = sessions?.[0]?.id;
 
-    const { data: sessionDetails, mutate: mutateSession } = useSWR(
+    const { data: sessionDetails } = useSWR(
         lastSessionId ? `/ai/sessions/${lastSessionId}` : null,
         () => getSession(lastSessionId!)
     );
 
-    const [pendingMessage, setPendingMessage] = useState<AiMessage | null>(null);
+    // ── Local state (SOURCE OF TRUTH for rendering) ───────────────────────────
+    const [messages, setMessages] = useState<AiMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | undefined>();
+    const [initialized, setInitialized] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Single source of truth combined with transient optimistic state
-    const displayMessages = sessionDetails?.messages ? [...sessionDetails.messages] : [];
-    if (pendingMessage && !displayMessages.find(m => m.id === pendingMessage.id || m.content === pendingMessage.content)) {
-        displayMessages.push(pendingMessage);
-    }
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
+    // ── Load history ONCE on first mount ─────────────────────────────────────
     useEffect(() => {
-        scrollToBottom();
-    }, [displayMessages, loading]);
-
-    useEffect(() => {
-        if (lastSessionId && !sessionId) {
+        if (!initialized && sessionDetails?.messages) {
+            setMessages(sessionDetails.messages);
             setSessionId(lastSessionId);
+            setInitialized(true);
         }
-    }, [lastSessionId, sessionId]);
+    }, [sessionDetails, lastSessionId, initialized]);
 
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, loading]);
+
+    // ── Send message ─────────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!input.trim() || loading) return;
 
@@ -50,27 +47,45 @@ export function AiCoach() {
             createdAt: new Date().toISOString(),
         };
 
-        setPendingMessage(userMessage);
+        // 1. Immediately append to local state — this never gets deleted
+        setMessages(prev => [...prev, userMessage]);
         setInput('');
         setLoading(true);
 
         try {
             const response = await sendChatMessage(input, sessionId);
 
-            if (!sessionId && response.sessionId) {
+            if (response.sessionId) {
                 setSessionId(response.sessionId);
             }
 
-            // IMPORTANT: await the SWR refetch FIRST, THEN clear the optimistic pending message.
-            // Without this, there's a gap where both the cache and pending are empty → blank screen.
-            if (response.sessionId) {
-                await mutateSession();
-            }
-            setPendingMessage(null);
+            // 2. Replace temp user message with confirmed one, append AI reply
+            setMessages(prev => {
+                // Remove our temp message (by detecting it's the temp id)
+                const withoutTemp = prev.filter(m => m.id !== userMessage.id);
+                // Add back as "real" from server perspective + the AI response
+                const confirmed: AiMessage = {
+                    ...userMessage,
+                    id: `confirmed-${Date.now()}`,
+                };
+                return [...withoutTemp, confirmed, response.message];
+            });
 
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
-            setPendingMessage(null); // Clear optimistic on error
+            const errData = error.response?.data;
+            const errorMessage =
+                errData?.detail || errData?.error || error.message || 'System Error. Please retry.';
+
+            setMessages(prev => [
+                ...prev,
+                {
+                    id: `err-${Date.now()}`,
+                    role: 'assistant',
+                    content: `⚠️ ${errorMessage}`,
+                    createdAt: new Date().toISOString(),
+                },
+            ]);
         } finally {
             setLoading(false);
         }
@@ -109,7 +124,7 @@ export function AiCoach() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {displayMessages.length === 0 && !loading && (
+                {messages.length === 0 && !loading && (
                     <div className="text-center py-12">
                         <Sparkles size={48} className="text-purple-500/30 mx-auto mb-4" />
                         <p className="text-gray-400 text-lg mb-2">System Ready.</p>
@@ -119,11 +134,10 @@ export function AiCoach() {
                     </div>
                 )}
 
-                {displayMessages.map((msg) => {
+                {messages.map((msg) => {
                     const isUser = msg.role === 'user';
                     const emotion = msg.emotion;
 
-                    // Dynamic styles based on emotion
                     let assistantStyles = 'bg-gray-800/50 border-gray-700/50 shadow-none';
                     if (emotion === 'MEDIC') {
                         assistantStyles = 'bg-amber-950/20 border-amber-500/30 shadow-[0_0_20px_rgba(251,191,36,0.1)]';
