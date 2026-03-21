@@ -30,11 +30,12 @@ export function AiCoach() {
 
     // Sync messages with SWR
     useEffect(() => {
-        if (sessionDetails?.messages) {
+        // Don't overwrite local messages while we have a pending message in flight
+        if (sessionDetails?.messages && !loading) {
             setMessages(sessionDetails.messages);
             setSessionId(lastSessionId);
         }
-    }, [sessionDetails, lastSessionId]);
+    }, [sessionDetails, lastSessionId, loading]);
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
@@ -65,7 +66,8 @@ export function AiCoach() {
                 mutateSession({
                     ...sessionDetails,
                     id: sessionDetails.id!, // Assured by the check
-                    messages: [...(sessionDetails.messages || []), response.message]
+                    // Ensure BOTH the user's message and the response are saved to the cache
+                    messages: [...(sessionDetails.messages || []), userMessage, response.message]
                 }, false);
             }
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
