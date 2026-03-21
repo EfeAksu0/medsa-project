@@ -51,23 +51,29 @@ export function AiCoach() {
         setInput('');
         setLoading(true);
 
+        // Optimistically update SWR cache IMMEDIATELY so component remounts don't lose the message while waiting for AI
+        if (sessionId && sessionDetails) {
+            mutateSession({
+                ...sessionDetails,
+                messages: [...(sessionDetails.messages || []), userMessage]
+            }, false);
+        }
+
         try {
             const response = await sendChatMessage(input, sessionId);
 
             if (!sessionId) {
                 setSessionId(response.sessionId);
-                // We'd ideally mutate the sessions list here to show the new session,
-                // but since it's a new interaction, SWR will pick it up or we can manual mutate.
             }
 
             setMessages((prev) => [...prev, response.message]);
-            // Sync back to SWR cache if we want persistence across re-mounts
-            if (sessionId && sessionDetails) {
+            // Sync back to SWR cache adding the final response
+            if (sessionDetails || response.sessionId) {
+                const currentSessionDetails = sessionDetails || { id: response.sessionId, userId: '', createdAt: '', updatedAt: '', messages: [] };
                 mutateSession({
-                    ...sessionDetails,
-                    id: sessionDetails.id!, // Assured by the check
-                    // Ensure BOTH the user's message and the response are saved to the cache
-                    messages: [...(sessionDetails.messages || []), userMessage, response.message]
+                    ...currentSessionDetails,
+                    id: currentSessionDetails.id!,
+                    messages: [...(currentSessionDetails.messages || []), userMessage, response.message]
                 }, false);
             }
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
