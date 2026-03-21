@@ -12,6 +12,8 @@ export function AiCoach() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     // Track if history has been loaded — use ref so it never re-triggers effects
     const historyLoaded = useRef(false);
+    // Track if user has already started chatting — prevents loadHistory from overwriting
+    const userHasSentMessage = useRef(false);
 
     // Load previous session history ONCE on mount using a plain async fetch
     useEffect(() => {
@@ -25,7 +27,8 @@ export function AiCoach() {
                     const sid = sessions[0].id;
                     setSessionId(sid);
                     const details = await getSession(sid);
-                    if (details?.messages) {
+                    // IMPORTANT: abort if user has sent a message while we were fetching
+                    if (!userHasSentMessage.current && details?.messages) {
                         setMessages(details.messages);
                     }
                 }
@@ -44,6 +47,9 @@ export function AiCoach() {
 
     const handleSend = async () => {
         if (!input.trim() || loading) return;
+
+        // Lock out loadHistory from ever overwriting state now that user is chatting
+        userHasSentMessage.current = true;
 
         const userMessage: AiMessage = {
             id: `user-${Date.now()}`,
@@ -144,8 +150,8 @@ export function AiCoach() {
                     return (
                         <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] rounded-2xl p-4 transition-all duration-500 ${isUser
-                                    ? 'bg-purple-600/20 border border-purple-500/30 text-white'
-                                    : `border text-gray-100 ${assistantStyles}`
+                                ? 'bg-purple-600/20 border border-purple-500/30 text-white'
+                                : `border text-gray-100 ${assistantStyles}`
                                 }`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                             </div>
