@@ -1,58 +1,59 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import useSWR from 'swr';
 import { sendChatMessage, AiMessage, getSessions, getSession } from '@/lib/aiApi';
 import { Send, Sparkles } from 'lucide-react';
 
 export function AiCoach() {
-    // ── Session discovery ────────────────────────────────────────────────────
-    const { data: sessions = [] } = useSWR('/ai/sessions', getSessions);
-    const lastSessionId = sessions?.[0]?.id;
-
-    const { data: sessionDetails } = useSWR(
-        lastSessionId ? `/ai/sessions/${lastSessionId}` : null,
-        () => getSession(lastSessionId!)
-    );
-
-    // ── Local state (SOURCE OF TRUTH for rendering) ───────────────────────────
     const [messages, setMessages] = useState<AiMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | undefined>();
-    // Ref (not state) so it updates synchronously — before any renders
-    const hasUserSentMessage = useRef(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // Track if history has been loaded — use ref so it never re-triggers effects
+    const historyLoaded = useRef(false);
 
-    // ── Load history ONCE on first mount, but NEVER after user starts chatting ─
+    // Load previous session history ONCE on mount using a plain async fetch
     useEffect(() => {
-        // If user has already typed and sent, block SWR from overwriting
-        if (hasUserSentMessage.current) return;
-        if (sessionDetails?.messages) {
-            setMessages(sessionDetails.messages);
-            setSessionId(lastSessionId);
+        if (historyLoaded.current) return;
+        historyLoaded.current = true;
+
+        async function loadHistory() {
+            try {
+                const sessions = await getSessions();
+                if (sessions && sessions.length > 0) {
+                    const sid = sessions[0].id;
+                    setSessionId(sid);
+                    const details = await getSession(sid);
+                    if (details?.messages) {
+                        setMessages(details.messages);
+                    }
+                }
+            } catch (err) {
+                // No history / not logged in yet — that's fine, start fresh
+                console.log('[AiCoach] No history to load:', err);
+            }
         }
-    }, [sessionDetails, lastSessionId]);
+
+        loadHistory();
+    }, []); // Empty deps — runs ONCE on mount only, never again
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, loading]);
 
-    // ── Send message ─────────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!input.trim() || loading) return;
 
-        // IMMEDIATELY lock out SWR from overwriting state — synchronous ref update
-        hasUserSentMessage.current = true;
-
         const userMessage: AiMessage = {
-            id: `temp-${Date.now()}`,
+            id: `user-${Date.now()}`,
             role: 'user',
             content: input,
             createdAt: new Date().toISOString(),
         };
 
-        // 1. Immediately append to local state — this never gets deleted
+        // Immediately add user message — from this point on, only this function
+        // modifies `messages`, nothing else can overwrite it.
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setLoading(true);
@@ -60,19 +61,18 @@ export function AiCoach() {
         try {
             const response = await sendChatMessage(input, sessionId);
 
-            if (response.sessionId) {
+            if (response.sessionId && !sessionId) {
                 setSessionId(response.sessionId);
             }
 
-            // 2. Simply append the AI reply — user message stays as-is
+            // Append AI response — user message is still there, untouched
             setMessages(prev => [...prev, response.message]);
 
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-            console.error('Failed to send message:', error);
+            console.error('[AiCoach] Send failed:', error);
             const errData = error.response?.data;
             const errorMessage =
-                errData?.detail || errData?.error || error.message || 'System Error. Please retry.';
-
+                errData?.detail || errData?.error || error.message || 'System error. Please retry.';
             setMessages(prev => [
                 ...prev,
                 {
@@ -124,9 +124,7 @@ export function AiCoach() {
                     <div className="text-center py-12">
                         <Sparkles size={48} className="text-purple-500/30 mx-auto mb-4" />
                         <p className="text-gray-400 text-lg mb-2">System Ready.</p>
-                        <p className="text-gray-500 text-sm">
-                            Submit trade query for analysis.
-                        </p>
+                        <p className="text-gray-500 text-sm">Submit trade query for analysis.</p>
                     </div>
                 )}
 
@@ -144,16 +142,11 @@ export function AiCoach() {
                     }
 
                     return (
-                        <div
-                            key={msg.id}
-                            className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`max-w-[85%] rounded-2xl p-4 transition-all duration-500 ${isUser
+                        <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[85%] rounded-2xl p-4 transition-all duration-500 ${isUser
                                     ? 'bg-purple-600/20 border border-purple-500/30 text-white'
                                     : `border text-gray-100 ${assistantStyles}`
-                                    }`}
-                            >
+                                }`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                             </div>
                         </div>
