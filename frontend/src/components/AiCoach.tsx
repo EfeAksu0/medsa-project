@@ -20,17 +20,19 @@ export function AiCoach() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | undefined>();
-    const [initialized, setInitialized] = useState(false);
+    // Ref (not state) so it updates synchronously — before any renders
+    const hasUserSentMessage = useRef(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // ── Load history ONCE on first mount ─────────────────────────────────────
+    // ── Load history ONCE on first mount, but NEVER after user starts chatting ─
     useEffect(() => {
-        if (!initialized && sessionDetails?.messages) {
+        // If user has already typed and sent, block SWR from overwriting
+        if (hasUserSentMessage.current) return;
+        if (sessionDetails?.messages) {
             setMessages(sessionDetails.messages);
             setSessionId(lastSessionId);
-            setInitialized(true);
         }
-    }, [sessionDetails, lastSessionId, initialized]);
+    }, [sessionDetails, lastSessionId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,6 +41,9 @@ export function AiCoach() {
     // ── Send message ─────────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!input.trim() || loading) return;
+
+        // IMMEDIATELY lock out SWR from overwriting state — synchronous ref update
+        hasUserSentMessage.current = true;
 
         const userMessage: AiMessage = {
             id: `temp-${Date.now()}`,
