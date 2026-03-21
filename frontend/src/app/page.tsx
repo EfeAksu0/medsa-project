@@ -467,7 +467,7 @@ export default function LandingPage() {
               MEDYSA
             </span>
           </div>
-          <p className="text-gray-400 text-xs italic font-serif mb-4 max-w-lg mx-auto leading-relaxed">
+          <p className="text-gray-300 text-xs italic font-serif mb-4 max-w-lg mx-auto leading-relaxed">
             &quot;In the arena of life, let humility be your shield, kindness your sword, and love your greatest victory.&quot;
           </p>
           <p className="text-gray-600 text-[10px] uppercase tracking-widest mb-8">© 2026 Medysa Trading Journal. All rights reserved.</p>
