@@ -93,16 +93,17 @@ function RegisterForm() {
                 <div className="absolute inset-0 bg-black/65 z-[1]" />
 
                 <div className="relative z-10 container mx-auto px-4 max-w-5xl">
-                    <div className="text-center mb-14">
-                        <div className="inline-block mb-8">
-                            <div className="relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-amber-500/80 shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-                                <Image src="/logo.png" alt="Medysa" fill className="object-cover scale-[1.15]" />
-                            </div>
+                    <div className="text-center mb-14 flex flex-col items-center gap-4">
+                        {/* Logo emblem */}
+                        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-amber-500/80 shadow-[0_0_20px_rgba(251,191,36,0.4)]">
+                            <Image src="/logo.png" alt="Medysa" fill className="object-cover scale-[1.15]" />
                         </div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold tracking-widest uppercase mb-5">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold tracking-widest uppercase">
                             ⚔️ Choose Your Rank
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-white mb-3" style={{ fontFamily: 'Cinzel, serif' }}>
+                        {/* Title */}
+                        <h2 className="text-4xl md:text-5xl font-black text-white" style={{ fontFamily: 'Cinzel, serif' }}>
                             Select Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-300">Weapon</span>
                         </h2>
                         <p className="text-gray-500 text-lg max-w-md mx-auto">
