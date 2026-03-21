@@ -61,12 +61,12 @@ export function AiCoach() {
                 setSessionId(response.sessionId);
             }
 
-            // Backend saved everything. Force SWR cache refresh, clear pending
-            setPendingMessage(null);
-
+            // IMPORTANT: await the SWR refetch FIRST, THEN clear the optimistic pending message.
+            // Without this, there's a gap where both the cache and pending are empty → blank screen.
             if (response.sessionId) {
-                mutateSession();
+                await mutateSession();
             }
+            setPendingMessage(null);
 
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
