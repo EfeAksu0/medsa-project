@@ -64,17 +64,8 @@ export function AiCoach() {
                 setSessionId(response.sessionId);
             }
 
-            // 2. Replace temp user message with confirmed one, append AI reply
-            setMessages(prev => {
-                // Remove our temp message (by detecting it's the temp id)
-                const withoutTemp = prev.filter(m => m.id !== userMessage.id);
-                // Add back as "real" from server perspective + the AI response
-                const confirmed: AiMessage = {
-                    ...userMessage,
-                    id: `confirmed-${Date.now()}`,
-                };
-                return [...withoutTemp, confirmed, response.message];
-            });
+            // 2. Simply append the AI reply — user message stays as-is
+            setMessages(prev => [...prev, response.message]);
 
         } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Failed to send message:', error);
