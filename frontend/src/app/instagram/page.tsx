@@ -594,13 +594,13 @@ export default function InstagramCarousel() {
                                     <div className="text-amber-500/80 font-medium tracking-widest text-lg animate-pulse">
                                         Swipe --&gt;
                                     </div>
+                                </div>
 
-                                    {/* Paginator Dots */}
-                                    <div className="absolute bottom-8 flex gap-2">
-                                        {[0, 1, 2, 3].map(i => (
-                                            <div key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-                                        ))}
-                                    </div>
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -625,13 +625,13 @@ export default function InstagramCarousel() {
                                     <p className="text-gray-300 text-2xl md:text-3xl leading-relaxed mt-6 max-w-xl">
                                         It&apos;s that the market exposes every psychological weakness you didn&apos;t know you had.
                                     </p>
+                                </div>
 
-                                    {/* Paginator Dots */}
-                                    <div className="absolute bottom-8 flex gap-2">
-                                        {[0, 1, 2, 3].map(i => (
-                                            <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-                                        ))}
-                                    </div>
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -640,8 +640,8 @@ export default function InstagramCarousel() {
                         {currentSlide === 2 && (
                             <div className="h-full bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-gray-900 to-black p-8 flex flex-col items-center justify-center relative overflow-hidden">
                                 <div className="w-full h-full relative scale-[0.80] sm:scale-[0.85] flex flex-col items-center justify-center">
-                                    {/* Medysa Header */}
-                                    <div className="absolute top-8 flex flex-col items-center opacity-80">
+                                    {/* Medysa Header - Fixed margin to prevent collision */}
+                                    <div className="mb-12 flex flex-col items-center opacity-80">
                                         <Shield className="w-6 h-6 text-amber-500 mb-1" />
                                     </div>
 
@@ -683,13 +683,13 @@ export default function InstagramCarousel() {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Paginator Dots */}
-                                    <div className="absolute bottom-8 flex gap-2">
-                                        {[0, 1, 2, 3].map(i => (
-                                            <div key={i} className={`w-2 h-2 rounded-full ${i === 2 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-                                        ))}
-                                    </div>
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 2 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -698,9 +698,9 @@ export default function InstagramCarousel() {
                         {currentSlide === 3 && (
                             <div className="h-full bg-black p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
                                 <div className="w-full h-full relative scale-[0.80] sm:scale-[0.85] flex flex-col items-center justify-center">
-                                    {/* Medysa Header */}
-                                    <div className="absolute top-12 flex flex-col items-center opacity-80">
-                                        <Shield className="w-6 h-6 text-amber-500 mb-1" />
+                                    {/* Medysa Header - Fixed to prevent overlap */}
+                                    <div className="mb-12 flex flex-col items-center opacity-80">
+                                        <Shield className="w-8 h-8 text-amber-500 mb-1" />
                                         <span className="text-white font-bold tracking-[0.2em] text-xs" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
                                     </div>
 
@@ -723,12 +723,13 @@ export default function InstagramCarousel() {
                                         Use Medysa to enforce your rules.
                                     </p>
 
-                                    {/* Paginator Dots */}
-                                    <div className="absolute bottom-8 flex gap-2">
-                                        {[0, 1, 2, 3].map(i => (
-                                            <div key={i} className={`w-2 h-2 rounded-full ${i === 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-                                        ))}
-                                    </div>
+                                </div>
+
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
                                 </div>
                             </div>
                         )}
