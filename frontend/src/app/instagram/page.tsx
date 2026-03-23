@@ -6,15 +6,15 @@ import Image from 'next/image';
 
 export default function InstagramCarousel() {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [activePost, setActivePost] = useState(2); // Default to Post 3 (The Checklist)
-    const totalSlides = activePost === 2 ? 3 : 6; // Post 3 has 3 slides, others have 6
+    const [activePost, setActivePost] = useState(3); // Default to Post 4 (The Psychology Carousel)
+    const totalSlides = activePost === 0 || activePost === 1 ? 6 : activePost === 2 ? 3 : 4; // Post 4 has 4 slides
 
     const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % totalSlides);
     const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
 
-    // Toggle between Post 1, 2, and 3
+    // Toggle between Post 1, 2, 3, and 4
     const togglePost = () => {
-        setActivePost((prev) => (prev + 1) % 3);
+        setActivePost((prev) => (prev + 1) % 4);
         setCurrentSlide(0);
     };
 
@@ -559,6 +559,168 @@ export default function InstagramCarousel() {
                                     <div className="relative z-10 px-6 py-3 bg-white text-black font-black text-lg rounded-full tracking-widest hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                                         LINK IN BIO
                                     </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* ========================================== */}
+                {/* POST 4 SLIDES (Psychology Series) */}
+                {/* ========================================== */}
+                {activePost === 3 && (
+                    <>
+                        {/* Slide 1: Title Hook */}
+                        {currentSlide === 0 && (
+                            <div className="h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 to-black p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                {/* Medysa Header */}
+                                <div className="absolute top-12 flex flex-col items-center opacity-80">
+                                    <Shield className="w-8 h-8 text-amber-500 mb-2 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
+                                    <span className="text-white font-bold tracking-[0.2em] text-sm" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
+                                </div>
+
+                                <h1 className="text-5xl md:text-7xl font-black mb-6 mt-16 leading-[1.1]" style={{ fontFamily: 'Cinzel, serif' }}>
+                                    <span className="text-amber-500 drop-shadow-[0_0_20px_rgba(245,158,11,0.2)]">TRADING BREAKS</span><br />
+                                    <span className="text-white">MOST PEOPLE.</span>
+                                </h1>
+
+                                <div className="w-16 h-1 bg-amber-500 my-8 rounded-full" />
+
+                                <p className="text-gray-400 text-2xl md:text-3xl font-light mb-16">
+                                    Here&apos;s why<br />(and how to fix it)
+                                </p>
+
+                                <div className="text-amber-500/80 font-medium tracking-widest text-lg animate-pulse">
+                                    Swipe --&gt;
+                                </div>
+
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 2: The Core Problem */}
+                        {currentSlide === 1 && (
+                            <div className="h-full bg-black p-8 px-12 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                {/* Medysa Header */}
+                                <div className="absolute top-12 flex flex-col items-center opacity-80">
+                                    <Shield className="w-6 h-6 text-amber-500 mb-1" />
+                                    <span className="text-white font-bold tracking-[0.2em] text-xs" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
+                                </div>
+
+                                <h2 className="text-4xl md:text-5xl font-black text-white mb-8 leading-tight">
+                                    It&apos;s not the losses.<br />
+                                    It&apos;s not the blown accounts.
+                                </h2>
+
+                                <div className="w-16 h-1 bg-amber-500 my-4 rounded-full" />
+
+                                <p className="text-gray-300 text-2xl md:text-3xl leading-relaxed mt-6 max-w-xl">
+                                    It&apos;s that the market exposes every psychological weakness you didn&apos;t know you had.
+                                </p>
+
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 3: The Four Horsemen */}
+                        {currentSlide === 2 && (
+                            <div className="h-full bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-gray-900 to-black p-8 flex flex-col items-center justify-center relative overflow-hidden">
+                                {/* Medysa Header */}
+                                <div className="absolute top-8 flex flex-col items-center opacity-80">
+                                    <Shield className="w-6 h-6 text-amber-500 mb-1" />
+                                </div>
+
+                                <h2 className="text-3xl md:text-4xl font-black text-amber-500 mb-12 tracking-wider" style={{ fontFamily: 'Cinzel, serif' }}>
+                                    SOUND FAMILIAR?
+                                </h2>
+
+                                <div className="w-full max-w-lg space-y-4">
+                                    {/* Item 1 */}
+                                    <div className="bg-gray-900/80 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
+                                        <div className="w-4 h-4 rounded-full bg-red-500 mt-1 shadow-[0_0_10px_rgba(239,68,68,0.5)] shrink-0" />
+                                        <div>
+                                            <h3 className="text-2xl font-black text-white mb-1 tracking-wide">FEAR</h3>
+                                            <p className="text-gray-400 text-lg leading-snug">Selling winners too early,<br />holding losers too long</p>
+                                        </div>
+                                    </div>
+                                    {/* Item 2 */}
+                                    <div className="bg-gray-900/80 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
+                                        <div className="w-4 h-4 rounded-full bg-amber-500 mt-1 shadow-[0_0_10px_rgba(245,158,11,0.5)] shrink-0" />
+                                        <div>
+                                            <h3 className="text-2xl font-black text-white mb-1 tracking-wide">EGO</h3>
+                                            <p className="text-gray-400 text-lg leading-snug">Doubling down because<br />admitting a mistake feels like failure</p>
+                                        </div>
+                                    </div>
+                                    {/* Item 3 */}
+                                    <div className="bg-gray-900/80 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
+                                        <div className="w-4 h-4 rounded-full bg-orange-500 mt-1 shadow-[0_0_10px_rgba(249,115,22,0.5)] shrink-0" />
+                                        <div>
+                                            <h3 className="text-2xl font-black text-white mb-1 tracking-wide">IMPULSE</h3>
+                                            <p className="text-gray-400 text-lg leading-snug">Chasing pumps,<br />revenge trading after losses</p>
+                                        </div>
+                                    </div>
+                                    {/* Item 4 */}
+                                    <div className="bg-gray-900/80 border border-gray-800 p-6 rounded-2xl flex items-start gap-4">
+                                        <div className="w-4 h-4 rounded-full bg-purple-500 mt-1 shadow-[0_0_10px_rgba(168,85,247,0.5)] shrink-0" />
+                                        <div>
+                                            <h3 className="text-2xl font-black text-white mb-1 tracking-wide">IMPATIENCE</h3>
+                                            <p className="text-gray-400 text-lg leading-snug">Entering before<br />the setup fully develops</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 2 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 4: The Solution / Conclusion */}
+                        {currentSlide === 3 && (
+                            <div className="h-full bg-black p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                {/* Medysa Header */}
+                                <div className="absolute top-12 flex flex-col items-center opacity-80">
+                                    <Shield className="w-6 h-6 text-amber-500 mb-1" />
+                                    <span className="text-white font-bold tracking-[0.2em] text-xs" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
+                                </div>
+
+                                <h2 className="text-3xl md:text-4xl font-black text-amber-500 mb-4 tracking-wider uppercase">
+                                    The Cheat Code<br />Everyone Ignores:
+                                </h2>
+
+                                <h1 className="text-5xl md:text-7xl font-black text-white mb-12 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                                    Cut. Your. Losses.
+                                </h1>
+
+                                <div className="w-16 h-1 bg-amber-500 my-4 rounded-full" />
+
+                                <p className="text-gray-300 text-2xl leading-relaxed mt-6">
+                                    Every trader knows this.<br />
+                                    Almost nobody actually does it.
+                                </p>
+
+                                <p className="text-gray-500 text-lg mt-12 mb-8 italic">
+                                    Use Medysa to enforce your rules.
+                                </p>
+
+                                {/* Paginator Dots */}
+                                <div className="absolute bottom-8 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
                                 </div>
                             </div>
                         )}
