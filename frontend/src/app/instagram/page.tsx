@@ -6,15 +6,15 @@ import Image from 'next/image';
 
 export default function InstagramCarousel() {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [activePost, setActivePost] = useState(3); // Default to Post 4 (The Psychology Carousel)
-    const totalSlides = activePost === 0 || activePost === 1 ? 6 : activePost === 2 ? 3 : 4; // Post 4 has 4 slides
+    const [activePost, setActivePost] = useState(4); // Default to Post 5 (Amateur vs Pro)
+    const totalSlides = activePost === 0 || activePost === 1 ? 6 : activePost === 2 ? 3 : activePost === 3 ? 4 : 4; // Post 5 has 4 slides
 
     const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % totalSlides);
     const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
 
-    // Toggle between Post 1, 2, 3, and 4
+    // Toggle between Post 1, 2, 3, 4, 5
     const togglePost = () => {
-        setActivePost((prev) => (prev + 1) % 4);
+        setActivePost((prev) => (prev + 1) % 5);
         setCurrentSlide(0);
     };
 
@@ -29,16 +29,16 @@ export default function InstagramCarousel() {
             {/* Instagram Post Container - 9:16 mobile aspect ratio */}
             <div className="relative w-[100vw] h-[100vh] md:w-[60vh] md:h-[calc(60vh*16/9)] bg-black overflow-hidden shadow-2xl border border-gray-800">
 
-                {/* Navigation Arrows (Visible on Desktop) */}
+                {/* Navigation Arrows (Hidden for screenshots) */}
                 <button
                     onClick={prevSlide}
-                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/80 text-white rounded-full items-center justify-center transition-all z-50 border border-gray-700"
+                    className="hidden absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/80 text-white rounded-full items-center justify-center transition-all z-50 border border-gray-700"
                 >
                     <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                     onClick={nextSlide}
-                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/80 text-white rounded-full items-center justify-center transition-all z-50 border border-gray-700"
+                    className="hidden absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/80 text-white rounded-full items-center justify-center transition-all z-50 border border-gray-700"
                 >
                     <ChevronRight className="w-6 h-6" />
                 </button>
@@ -729,6 +729,184 @@ export default function InstagramCarousel() {
                                 <div className="absolute bottom-8 flex gap-2">
                                     {[0, 1, 2, 3].map(i => (
                                         <div key={i} className={`w-2 h-2 rounded-full ${i === 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* ========================================== */}
+                {/* POST 5 SLIDES (Amateur vs Medysa Trader) */}
+                {/* ========================================== */}
+                {activePost === 4 && (
+                    <>
+                        {/* Slide 1: The Timeline Comparison (Recreating User Design) */}
+                        {currentSlide === 0 && (
+                            <div className="h-full bg-[#0a0a0c] flex flex-col items-center justify-center relative overflow-hidden font-sans">
+                                {/* Subtle Background texture */}
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-900/40 via-black to-black" />
+
+                                {/* Medysa Logo Top */}
+                                <div className="absolute top-16 flex items-center gap-3 opacity-90 z-10">
+                                    <Shield className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                    <span className="text-white text-xl font-bold tracking-[0.3em]" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
+                                </div>
+
+                                {/* Comparison Graph Area */}
+                                <div className="w-full flex flex-col justify-center gap-16 mt-12 z-10 relative px-4">
+
+                                    {/* Amateur Trader */}
+                                    <div className="w-full flex flex-col">
+                                        <h3 className="text-2xl md:text-3xl font-bold text-red-500 mb-6 text-center tracking-wide">
+                                            Amateur Trader
+                                        </h3>
+                                        <div className="relative w-full h-[2px]">
+                                            {/* Background track */}
+                                            <div className="absolute top-0 right-0 w-1/2 h-[2px] bg-red-900/30" />
+                                            {/* Active line */}
+                                            <div className="absolute top-0 left-0 w-1/2 h-[2px] bg-gradient-to-r from-red-900/0 via-red-500/50 to-red-500 relative">
+                                                <div className="absolute -right-3 -top-[6px] w-[14px] h-[14px] rounded-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* VS Badge */}
+                                    <div className="flex justify-center w-full">
+                                        <span className="text-gray-600 font-bold text-xl tracking-widest uppercase">VS</span>
+                                    </div>
+
+                                    {/* Pro (Medysa) Trader */}
+                                    <div className="w-full flex flex-col">
+                                        <h3 className="text-2xl md:text-3xl font-bold text-amber-500 mb-6 text-center tracking-wide" style={{ fontFamily: 'Cinzel, serif' }}>
+                                            Medysa Trader
+                                        </h3>
+                                        <div className="relative w-full h-[2px]">
+                                            {/* Background track */}
+                                            <div className="absolute top-0 right-0 w-1/6 h-[2px] bg-amber-900/30" />
+                                            {/* Active line */}
+                                            <div className="absolute top-0 left-0 w-5/6 h-[2px] bg-gradient-to-r from-amber-900/0 via-amber-500/50 to-amber-500 relative">
+                                                <div className="absolute -right-3 -top-[6px] w-[14px] h-[14px] rounded-full bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,1)]">
+                                                    <div className="absolute inset-0 rounded-full bg-white opacity-50 animate-ping" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                {/* Slide dots */}
+                                <div className="absolute bottom-10 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-500' : 'bg-gray-800'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 2: The Exact TradeZella Replica */}
+                        {currentSlide === 1 && (
+                            <div className="h-full bg-black flex flex-col items-center justify-center relative overflow-hidden font-sans">
+
+                                {/* Orange Medysa Logo Top */}
+                                <div className="absolute top-8 flex items-center gap-2 z-10">
+                                    <Shield className="w-5 h-5 text-orange-500" />
+                                    <span className="text-white text-sm tracking-[0.3em]" style={{ fontFamily: 'Cinzel, serif' }}>MEDYSA</span>
+                                </div>
+
+                                {/* Graph Area */}
+                                <div className="w-full pl-8 md:pl-16 flex flex-col relative z-10 w-full max-w-sm">
+
+                                    {/* Amateur Trader */}
+                                    <div className="flex flex-col items-start w-full">
+                                        <h3 className="text-xl md:text-3xl font-bold text-[#f9597b] mb-2 tracking-tight">
+                                            Amateur Trader
+                                        </h3>
+                                        <div className="flex items-center w-full">
+                                            <div className="w-[12px] h-[12px] rounded-full bg-[#f9597b] shrink-0" />
+                                            <div className="h-[1.5px] bg-[#f9597b]/40 w-[200vw]" />
+                                        </div>
+                                    </div>
+
+                                    {/* VS Badge */}
+                                    <div className="py-6 pl-6 text-center w-2/3">
+                                        <span className="text-gray-500 font-bold text-sm tracking-widest uppercase">vs</span>
+                                    </div>
+
+                                    {/* Pro Trader */}
+                                    <div className="flex flex-col items-start w-full">
+                                        <h3 className="text-xl md:text-3xl font-bold text-[#976aff] mb-2 tracking-tight">
+                                            Pro Trader
+                                        </h3>
+                                        <div className="flex items-center w-full">
+                                            <div className="w-[12px] h-[12px] rounded-full bg-[#976aff] shrink-0" />
+                                            <div className="h-[1.5px] bg-[#976aff]/40 w-[200vw]" />
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                {/* Slide dots */}
+                                <div className="absolute bottom-10 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-orange-500' : 'bg-gray-800'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 3: App Mockup / Feature Showcase */}
+                        {currentSlide === 2 && (
+                            <div className="h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 to-black p-8 flex flex-col items-center justify-center relative">
+                                <h2 className="text-3xl md:text-4xl font-black text-white text-center leading-tight mb-8" style={{ fontFamily: 'Cinzel, serif' }}>
+                                    Stop Guessing.<br />
+                                    <span className="text-amber-500">Start Commanding.</span>
+                                </h2>
+
+                                <div className="relative w-full max-w-sm aspect-video bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(245,158,11,0.15)] flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-[url('/post2_dashboard_full.png')] bg-cover bg-center opacity-70" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent" />
+
+                                    {/* Overlay data */}
+                                    <div className="relative z-10 w-full bg-black/60 backdrop-blur-md p-4 rounded-lg border border-gray-600 mt-auto">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-gray-300 text-xs uppercase">Win Rate</span>
+                                            <span className="text-green-500 font-bold text-sm">68.4%</span>
+                                        </div>
+                                        <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="h-full bg-green-500 w-[68%]" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-10 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 2 ? 'bg-amber-500' : 'bg-gray-800'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide 4: CTA */}
+                        {currentSlide === 3 && (
+                            <div className="h-full bg-black flex flex-col items-center justify-center relative overflow-hidden font-sans p-8">
+                                <Shield className="w-24 h-24 text-amber-500 mb-8 drop-shadow-[0_0_30px_rgba(245,158,11,0.6)] animate-pulse" />
+
+                                <h1 className="text-5xl font-black text-white mb-6 text-center" style={{ fontFamily: 'Cinzel, serif' }}>
+                                    BECOME THE <span className="text-amber-500">1%</span>
+                                </h1>
+
+                                <p className="text-gray-400 text-center text-lg mb-12">
+                                    The ultimate trading journal and AI psychologist.
+                                </p>
+
+                                <div className="bg-amber-500 text-black px-10 py-4 font-black rounded-full text-xl shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+                                    LINK IN BIO
+                                </div>
+
+                                <div className="absolute bottom-10 flex gap-2">
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} className={`w-2 h-2 rounded-full ${i === 3 ? 'bg-amber-500' : 'bg-gray-800'}`} />
                                     ))}
                                 </div>
                             </div>

@@ -8,8 +8,10 @@ const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
     try {
-        // Initialize Discord Bot
-        await setupDiscordBot();
+        // Initialize Discord Bot (Non-blocking)
+        setupDiscordBot().catch(error => {
+            console.error('Failed to start Discord Bot:', error);
+        });
 
         // Database connection will go here later
 

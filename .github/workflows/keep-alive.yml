@@ -1,0 +1,15 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Runs every 3 days at noon UTC (Monday, Thursday pattern)
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  ping-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        run: |
+          psql "${{ secrets.DATABASE_URL }}" -c "SELECT 1;" || echo "Ping failed"

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journey Graphic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-8 text-white">
+
+    <div id="capture"
+        class="relative w-[800px] h-[900px] bg-gray-900 rounded-2xl shadow-2xl flex flex-col items-center justify-start pt-12 overflow-hidden px-4">
+
+        <h1 class="text-4xl md:text-5xl font-bold text-center mb-16 tracking-tight z-10 w-full leading-tight">
+            THE JOURNEY OF EVERY<br />
+            <span class="text-cyan-400">PROFITABLE TRADER</span>
+        </h1>
+
+        <div class="relative w-[500px] h-[500px] flex items-center justify-center">
+
+            <!-- Layer 1 -->
+            <div class="absolute inset-0 rounded-full bg-[#70C1E8]/30 border border-[#70C1E8]/50 flex">
+                <div class="absolute left-[-20px] top-[15%] text-xs font-medium text-center w-[120px]">You align
+                    your<br />trading with your<br />purpose.</div>
+                <div class="absolute right-[-20px] top-[15%] text-xs font-medium text-center w-[120px]">Profits are
+                    the<br />byproduct of<br />consistency, not the<br />goal.</div>
+            </div>
+
+            <!-- Layer 2 -->
+            <div class="absolute inset-[12%] rounded-full bg-[#189FB9] border border-cyan-300/30 flex">
+                <div class="absolute left-[-15px] top-[25%] text-xs text-white/95 text-center w-[100px]">Trusting
+                    the<br />system over the<br />feeling.</div>
+                <div class="absolute right-[0px] top-[25%] text-xs text-white/95 text-center w-[100px]">Stops
+                    hold.<br />Rules hold.</div>
+            </div>
+
+            <!-- Layer 3 -->
+            <div class="absolute inset-[25%] rounded-full bg-[#F38A1D] flex">
+                <div class="absolute left-[-5px] top-[35%] text-xs text-white/95 text-center w-[100px]">Following
+                    rules<br />even when<br />uncomfortable.</div>
+                <div class="absolute right-[-5px] top-[35%] text-xs text-white/95 text-center w-[100px]">Journaling
+                    every<br />trade. Win or lose.</div>
+            </div>
+
+            <!-- Layer 4 -->
+            <div class="absolute inset-[38%] rounded-full bg-[#FFBC1C] flex">
+                <div class="absolute left-0 bottom-[15%] text-[10px] text-[#333] font-semibold text-center w-[80px]">
+                    Moving stops.<br />Sizing up after<br />winners.</div>
+                <div class="absolute right-0 bottom-[15%] text-[10px] text-[#333] font-semibold text-center w-[80px]">
+                    FOMO in.<br />Revenge trade.<br />Repeat.</div>
+            </div>
+
+            <!-- Layer 5 -->
+            <div class="absolute inset-[52%] rounded-full bg-[#E5E2FA] flex flex-col items-center justify-end pb-6">
+                <div class="text-[#1A2542] text-[10px] font-bold text-center z-20">
+                    Strategy-hopping.<br />Waiting to feel ready.<br />Nothing changes.
+                </div>
+            </div>
+
+            <!-- Arrow line -->
+            <div class="absolute top-[-40px] bottom-[20px] left-1/2 -translate-x-1/2 w-[2px] bg-[#11244C] z-30"></div>
+            <div
+                class="absolute top-[-52px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-[#11244C] z-30">
+            </div>
+
+            <!-- Labels -->
+            <div
+                class="absolute inset-0 pointer-events-none flex flex-col items-center justify-between z-40 h-[90%] my-auto top-[0%]">
+
+                <div
+                    class="bg-[#11244C] text-white px-6 py-2 pb-[10px] font-bold tracking-wider text-sm border-b-2 border-b-cyan-500 rounded shadow-md mt-6">
+                    COMPOUND ZONE
+                </div>
+
+                <div
+                    class="bg-[#11244C] text-white px-6 py-2 pb-[10px] font-bold tracking-wider text-sm border-b-2 border-b-cyan-500 rounded shadow-md mt-8">
+                    CONSISTENT ZONE
+                </div>
+
+                <div
+                    class="bg-[#11244C] text-white px-6 py-2 pb-[10px] font-bold tracking-wider text-sm border-b-2 border-b-cyan-500 rounded shadow-md mt-8">
+                    PROCESS ZONE
+                </div>
+
+                <div
+                    class="bg-[#11244C] text-white px-6 py-2 pb-[10px] font-bold tracking-wider text-sm border-b-2 border-b-cyan-500 rounded shadow-md mt-8 flex flex-col items-center relative">
+                    REACTIVE ZONE
+                    <span
+                        class="text-[#FFBC1C] text-[10px] font-normal leading-tight mt-1 bg-[#11244C] absolute -bottom-4 w-max px-2 rounded">
+                        Trading on feel, not rules.
+                    </span>
+                </div>
+
+                <div
+                    class="bg-[#11244C] text-white px-6 py-2 pb-[10px] font-bold tracking-wider text-sm border-b-2 border-b-cyan-500 rounded shadow-md mt-12 z-50 relative">
+                    WAITING ZONE
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="absolute bottom-6 right-8 flex items-center justify-center flex-col z-50 gap-2">
+            <span
+                class="text-4xl font-extrabold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.9)]"
+                style="font-family: 'Inter', sans-serif;">MEDYSA</span>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
