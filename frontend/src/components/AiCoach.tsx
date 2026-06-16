@@ -98,7 +98,7 @@ export function AiCoach() {
             className="flex flex-col h-full rounded-2xl border border-purple-500/20 overflow-hidden bg-cover bg-center"
             style={{
                 backgroundImage: 'url("/ai-coach-bg.png")',
-                backgroundColor: 'rgba(3, 7, 18, 0.65)',
+                backgroundColor: 'rgba(3, 7, 18, 0.93)',
                 backgroundBlendMode: 'overlay'
             }}
         >
