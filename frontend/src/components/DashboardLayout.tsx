@@ -29,7 +29,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gray-950">
+        <div
+            className="min-h-screen bg-cover bg-center bg-fixed"
+            style={{
+                backgroundImage: 'url("/ai-coach-bg.png")',
+                backgroundColor: 'rgba(3, 7, 18, 0.80)',
+                backgroundBlendMode: 'overlay'
+            }}
+        >
             <Sidebar />
             <main className="pl-64 p-8">
                 <div className="max-w-7xl mx-auto">
