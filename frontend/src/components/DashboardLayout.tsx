@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="min-h-screen bg-cover bg-center bg-fixed"
             style={{
                 backgroundImage: 'url("/ai-coach-bg.png")',
-                backgroundColor: 'rgba(3, 7, 18, 0.80)',
+                backgroundColor: 'rgba(3, 7, 18, 0.93)',
                 backgroundBlendMode: 'overlay'
             }}
         >
