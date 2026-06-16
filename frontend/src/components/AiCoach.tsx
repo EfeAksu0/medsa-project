@@ -94,9 +94,16 @@ export function AiCoach() {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 rounded-2xl border border-purple-500/20 overflow-hidden">
+        <div
+            className="flex flex-col h-full rounded-2xl border border-purple-500/20 overflow-hidden bg-cover bg-center"
+            style={{
+                backgroundImage: 'url("/ai-coach-bg.png")',
+                backgroundColor: 'rgba(3, 7, 18, 0.65)',
+                backgroundBlendMode: 'overlay'
+            }}
+        >
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-b border-purple-500/20 p-6">
+            <div className="bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-b border-purple-500/20 p-6 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
                         <Sparkles size={24} className="text-purple-400" />
