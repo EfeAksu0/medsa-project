@@ -94,14 +94,8 @@ export function AiCoach() {
     };
 
     return (
-        <div
-            className="flex flex-col h-full rounded-2xl border border-purple-500/20 overflow-hidden bg-cover bg-center"
-            style={{
-                backgroundImage: 'url("/ai-coach-bg.png")',
-                backgroundColor: 'rgba(3, 7, 18, 0.93)',
-                backgroundBlendMode: 'overlay'
-            }}
-        >
+        <div className="flex flex-col h-full rounded-2xl border border-purple-500/20 overflow-hidden bg-gray-900/60 backdrop-blur-xl relative">
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_60%_at_50%_0%,rgba(147,51,234,0.08),transparent)]" />
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-b border-purple-500/20 p-6 backdrop-blur-sm">
                 <div className="flex items-center gap-3">

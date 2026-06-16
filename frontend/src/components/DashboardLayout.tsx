@@ -29,20 +29,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user) return null;
 
     return (
-        <div
-            className="min-h-screen bg-cover bg-center bg-fixed"
-            style={{
-                backgroundImage: 'url("/ai-coach-bg.png")',
-                backgroundColor: 'rgba(3, 7, 18, 0.93)',
-                backgroundBlendMode: 'overlay'
-            }}
-        >
-            <Sidebar />
-            <main className="pl-64 p-8">
-                <div className="max-w-7xl mx-auto">
-                    {children}
-                </div>
-            </main>
+        <div className="min-h-screen bg-gray-950 text-white relative">
+            {/* Premium Flawless CSS Mesh Gradient Overlay */}
+            <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(147,51,234,0.15),transparent)]" />
+            <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_80%_70%,rgba(56,189,248,0.08),transparent)]" />
+
+            <div className="relative z-10 flex min-h-screen">
+                <Sidebar />
+                <main className="pl-64 p-8 w-full">
+                    <div className="max-w-7xl mx-auto">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }
