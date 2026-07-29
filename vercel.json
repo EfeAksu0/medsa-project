@@ -1,5 +1,6 @@
 {
   "name": "medsa-project",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD . ':(exclude)*.md'",
   "experimentalServices": {
     "frontend": {
       "entrypoint": "frontend",
