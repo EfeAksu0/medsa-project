@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { ConfirmationModal } from './modals/ConfirmationModal';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, locked: false },
@@ -57,8 +58,9 @@ export function Sidebar() {
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex flex-col items-center text-center">
+            <div className="p-4 border-b border-gray-800 flex flex-col items-center gap-2 text-center">
                 <p className="text-sm text-white italic drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">Master Your Trades, Own Your Future</p>
+                <ThemeToggle className="mt-1" />
             </div>
 
             <nav className="flex-1 p-4 space-y-2 relative z-20">

@@ -43,6 +43,7 @@ export const metadata: Metadata = {
 };
 
 import { SWRConfig } from 'swr';
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -52,12 +53,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${inter.className} ${cinzel.variable} bg-gray-950 text-white`} suppressHydrationWarning={true}>
-        <SWRConfig value={{
-          revalidateOnFocus: false,
-          dedupingInterval: 5000,
-        }}>
-          <AuthProvider>{children}</AuthProvider>
-        </SWRConfig>
+        <ThemeProvider>
+          <SWRConfig value={{
+            revalidateOnFocus: false,
+            dedupingInterval: 5000,
+          }}>
+            <AuthProvider>{children}</AuthProvider>
+          </SWRConfig>
+        </ThemeProvider>
       </body>
     </html>
   );

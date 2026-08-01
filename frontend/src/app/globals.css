@@ -58,6 +58,35 @@ h6 {
   transform: translateY(-2px);
 }
 
+/* PRO FINTECH MODE OVERRIDES */
+body.theme-pro {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+body.theme-pro h1,
+body.theme-pro h2,
+body.theme-pro h3,
+body.theme-pro h4,
+body.theme-pro h5,
+body.theme-pro h6 {
+  font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+body.theme-pro .medieval-card {
+  background: #18181b !important;
+  border: 1px solid #27272a !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.theme-pro .medieval-card:hover {
+  border-color: #3f3f46 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+  transform: none !important;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;
