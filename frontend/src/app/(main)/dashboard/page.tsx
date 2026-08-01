@@ -15,6 +15,7 @@ import { KnightsBattle } from '@/components/animations/KnightsBattle';
 import { AiCoachWidget } from '@/components/dashboard/AiCoachWidget';
 import { ToDoWidget } from '@/components/dashboard/ToDoWidget';
 import { BehavioralRiskWidget } from '@/components/dashboard/BehavioralRiskWidget';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { BugReportModal } from '@/components/modals/BugReportModal';
 
@@ -205,6 +206,7 @@ export default function DashboardPage() {
                         <Shield size={14} className="text-amber-500" />
                         Guide
                     </button>
+                    <ThemeToggle />
                 </div>
             </div>
 

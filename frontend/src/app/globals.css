@@ -74,17 +74,30 @@ body.theme-pro h6 {
   font-family: system-ui, -apple-system, sans-serif !important;
 }
 
-body.theme-pro .medieval-card {
+body.theme-pro .medieval-card,
+body.theme-pro .bg-gray-900\/60,
+body.theme-pro .bg-gray-900 {
   background: #18181b !important;
   border: 1px solid #27272a !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
 }
 
 body.theme-pro .medieval-card:hover {
   border-color: #3f3f46 !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
   transform: none !important;
+}
+
+body.theme-pro .text-amber-400,
+body.theme-pro .text-amber-300,
+body.theme-pro .text-amber-500 {
+  color: #38bdf8 !important; /* Sky Blue for Pro Mode Accents */
+}
+
+body.theme-pro .border-amber-500\/20,
+body.theme-pro .border-amber-600\/20 {
+  border-color: rgba(56, 189, 248, 0.2) !important;
 }
 
 /* Scrollbar styling */
