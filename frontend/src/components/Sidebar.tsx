@@ -58,9 +58,10 @@ export function Sidebar() {
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex flex-col items-center gap-2 text-center">
-                <p className="text-sm text-white italic drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">Master Your Trades, Own Your Future</p>
-                <ThemeToggle className="mt-1" />
+            <div className="p-4 border-b border-gray-800 flex flex-col items-center text-center">
+                <p className="text-sm font-semibold text-amber-200 tracking-wide font-serif leading-snug drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]">
+                    &quot;Master Your Trades, Own Your Future&quot;
+                </p>
             </div>
 
             <nav className="flex-1 p-4 space-y-2 relative z-20">
