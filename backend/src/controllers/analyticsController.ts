@@ -214,3 +214,88 @@ export const getCalendarStats = async (req: AuthRequest, res: Response, next: Ne
         next(error);
     }
 };
+
+export const getBehavioralRiskStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.userId;
+
+        const trades = await prisma.trade.findMany({
+            where: {
+                userId,
+                deletedAt: null,
+                folderId: null
+            },
+            orderBy: { tradeDate: 'asc' }
+        });
+
+        // 1. Time-of-Day Heatmap
+        const timeBlocks: Record<string, { label: string; wins: number; losses: number; total: number; netPnL: number }> = {
+            '00-06': { label: 'Night Shift (00:00 - 06:00)', wins: 0, losses: 0, total: 0, netPnL: 0 },
+            '06-12': { label: 'Morning Session (06:00 - 12:00)', wins: 0, losses: 0, total: 0, netPnL: 0 },
+            '12-18': { label: 'US/EU Overlap (12:00 - 18:00)', wins: 0, losses: 0, total: 0, netPnL: 0 },
+            '18-24': { label: 'Evening Session (18:00 - 24:00)', wins: 0, losses: 0, total: 0, netPnL: 0 },
+        };
+
+        let revengeTradeCount = 0;
+        let revengeLossCount = 0;
+        let lastTradeTime: Date | null = null;
+        let lastTradeResult: string | null = null;
+
+        trades.forEach(trade => {
+            const pnl = trade.pnl !== null && trade.pnl !== undefined ? Number(trade.pnl) : 0;
+            const tradeDateObj = new Date(trade.tradeDate);
+            const hour = isNaN(tradeDateObj.getHours()) ? 12 : tradeDateObj.getHours();
+
+            let blockKey = '12-18';
+            if (hour >= 0 && hour < 6) blockKey = '00-06';
+            else if (hour >= 6 && hour < 12) blockKey = '06-12';
+            else if (hour >= 12 && hour < 18) blockKey = '12-18';
+            else if (hour >= 18) blockKey = '18-24';
+
+            const block = timeBlocks[blockKey];
+            block.total += 1;
+            block.netPnL += pnl;
+            if (trade.result === 'WIN') block.wins += 1;
+            else if (trade.result === 'LOSS') block.losses += 1;
+
+            // Revenge Trade Detection (Trade within 15 minutes of a loss)
+            if (lastTradeTime && lastTradeResult === 'LOSS' && !isNaN(tradeDateObj.getTime())) {
+                const minutesDiff = (tradeDateObj.getTime() - lastTradeTime.getTime()) / (1000 * 60);
+                if (minutesDiff >= 0 && minutesDiff <= 15) {
+                    revengeTradeCount++;
+                    if (trade.result === 'LOSS') revengeLossCount++;
+                }
+            }
+
+            if (!isNaN(tradeDateObj.getTime())) {
+                lastTradeTime = tradeDateObj;
+                lastTradeResult = trade.result;
+            }
+        });
+
+        const timeBlockAnalysis = Object.values(timeBlocks).map(b => ({
+            ...b,
+            winRate: b.total > 0 ? Number(((b.wins / b.total) * 100).toFixed(1)) : 0,
+            netPnL: Number(b.netPnL.toFixed(2))
+        }));
+
+        const revengeWinRate = revengeTradeCount > 0 
+            ? Number((((revengeTradeCount - revengeLossCount) / revengeTradeCount) * 100).toFixed(1)) 
+            : 100;
+
+        res.json({
+            timeBlockAnalysis,
+            revengeStats: {
+                detectedRevengeTrades: revengeTradeCount,
+                revengeLosses: revengeLossCount,
+                revengeWinRate,
+                riskAlert: revengeTradeCount > 2 && revengeWinRate < 40 
+                    ? '⚠️ High Risk: Elevated revenge trading detected post-loss.' 
+                    : '✅ Execution protocol stable.'
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+

@@ -14,6 +14,7 @@ import { CalendarWidget } from '@/components/dashboard/CalendarWidget';
 import { KnightsBattle } from '@/components/animations/KnightsBattle';
 import { AiCoachWidget } from '@/components/dashboard/AiCoachWidget';
 import { ToDoWidget } from '@/components/dashboard/ToDoWidget';
+import { BehavioralRiskWidget } from '@/components/dashboard/BehavioralRiskWidget';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { BugReportModal } from '@/components/modals/BugReportModal';
 
@@ -245,9 +246,10 @@ export default function DashboardPage() {
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Left column: Chart + Calendar */}
+                {/* Left column: Chart + Behavioral Risk + Calendar */}
                 <div className="xl:col-span-2 space-y-6">
                     <EquityCurveChart data={equityData} />
+                    <BehavioralRiskWidget />
 
                     {/* Arena section — now smaller and cleaner */}
                     <div className="bg-gray-900/60 border border-amber-600/20 rounded-2xl p-5 backdrop-blur-sm">
